@@ -63,7 +63,7 @@ def get_expected_output_fastqc_merged(species):
 def get_expected_output_contamination_ecmsd(species):  
 
     if config.get("pipeline", {}).get("raw_reads_processing", {}).get("contamination_analysis", {}).get("tools", {}).get("ecmsd", {}).get("execute", True) == False:
-        logging.info(f"Skipping contamination analysis with Centrifuge for {species}. Disabled in config.")
+        logging.info(f"Skipping contamination analysis with ECMSD for {species}. Disabled in config.")
         return []
 
     expected_outputs = []
@@ -76,7 +76,7 @@ def get_expected_output_contamination_ecmsd(species):
 
 #-----------------------------------------------------------------------------------------------
 # Get expected output file paths for contamination analysis (Centrifuge)
-def get_expected_output_contamination_centrifuge(species):  
+def get_expected_output_contamination_centrifuge(species):
 
     if config.get("pipeline", {}).get("raw_reads_processing", {}).get("contamination_analysis", {}).get("tools", {}).get("centrifuge", {}).get("execute", True) == False:
         logging.info(f"Skipping contamination analysis with Centrifuge for {species}. Disabled in config.")
@@ -88,7 +88,8 @@ def get_expected_output_contamination_centrifuge(species):
         for sample in get_samples_for_species_individual(species, individual):
             expected_outputs.append(f"{species}/results/contamination_analysis/centrifuge/{individual}/{sample}/{sample}_centrifuge_report.tsv")
             expected_outputs.append(f"{species}/results/contamination_analysis/centrifuge/{individual}/{sample}/{sample}_taxon_counts.tsv")
-    
+            expected_outputs.append(f"{species}/results/contamination_analysis/centrifuge/{individual}/{sample}/{sample}_centrifuge_output.tsv.gz")
+
     return expected_outputs
 
 #-----------------------------------------------------------------------------------------------

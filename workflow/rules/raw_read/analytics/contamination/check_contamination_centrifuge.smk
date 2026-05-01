@@ -4,16 +4,17 @@
 # Determine index path: use config if provided, otherwise use downloaded
 # We use the index from https://benlangmead.github.io/aws-indexes/centrifuge
 # Refseq: bacteria, archaea, viral, human
+_configured_index = config.get("pipeline", {}).get("raw_reads_processing", {}).get("contamination_analysis", {}).get("tools", {}).get("centrifuge", {}).get("settings", {}).get("index")
+
 def get_centrifuge_index(wildcards):
-    configured_index = config.get("pipeline", {}).get("raw_reads_processing", {}).get("contamination_analysis", {}).get("tools", {}).get("centrifuge", {}).get("settings", {}).get("index")
-    if configured_index:
-        return configured_index
+    if _configured_index:
+        return _configured_index
     else:
         return "resources/centrifuge_index/p+h+v"
 
 def get_centrifuge_index_input(wildcards):
-    configured_index = config.get("pipeline", {}).get("raw_reads_processing", {}).get("contamination_analysis", {}).get("tools", {}).get("centrifuge", {}).get("settings", {}).get("index")
-    if configured_index:
+    
+    if _configured_index:
         return []
     else:
         return expand("resources/centrifuge_index/p+h+v.{ext}.cf", ext=["1", "2", "3"])
@@ -45,7 +46,7 @@ rule analyze_contamination_with_centrifuge:
         fastq = "{species}/processed/reads/reads_quality_filtered/{sample}_quality_filtered_final.fastq.gz",
         index = get_centrifuge_index_input
     output:
-        output = "{species}/results/contamination_analysis/centrifuge/{individual}/{sample}/{sample}_centrifuge_output.tsv",
+        output = temp("{species}/results/contamination_analysis/centrifuge/{individual}/{sample}/{sample}_centrifuge_output.tsv"),
         report = "{species}/results/contamination_analysis/centrifuge/{individual}/{sample}/{sample}_centrifuge_report.tsv"
     threads: 15
     params:
@@ -62,7 +63,6 @@ rule analyze_contamination_with_centrifuge:
             --report-file {output.report} \
             --threads {threads}
         """
-
 
 rule analyze_centrifuge_report_taxon_counts:
     input:
@@ -101,3 +101,15 @@ rule analyze_centrifuge_report_top_taxa:
         include_human = config.get("pipeline", {}).get("raw_reads_processing", {}).get("contamination_analysis", {}).get("tools", {}).get("centrifuge", {}).get("settings", {}).get("include_human_taxid", False)
     script:
         "../../../../scripts/raw_reads/analytics/contamination/check_contamination_ecmsd_script_analyze_centrifuge_report_top_taxa.py"
+
+rule compress_centrifuge_output:
+    input:
+        tsv = "{species}/results/contamination_analysis/centrifuge/{individual}/{sample}/{sample}_centrifuge_output.tsv",
+    output:
+        "{species}/results/contamination_analysis/centrifuge/{individual}/{sample}/{sample}_centrifuge_output.tsv.gz"
+    threads: 4
+    conda:
+        "../../../../envs/pigz.yaml"
+    message: "Compressing Centrifuge output for {wildcards.sample}"
+    shell:
+        "pigz -p {threads} -c {input.tsv} > {output}"
