@@ -230,7 +230,7 @@ pipeline:
   dynamics:
     # When true, this stage will be executed (Default: true)
     execute: true
-    seqVista:
+    seqvista:
       # When true, this sub-stage will be executed (Default: true)
       execute: true
     pf_normalization:
