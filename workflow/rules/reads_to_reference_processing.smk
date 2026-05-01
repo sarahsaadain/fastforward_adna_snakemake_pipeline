@@ -25,11 +25,8 @@ include: "reads_to_reference/analytics/determine_coverage_depth_breadth.smk"
 # Calculate additional mapping statistics using samtools
 include: "reads_to_reference/analytics/analyze_bam_with_samtools_stats.smk"
 
-# Calculate additional mapping statistics using preseq
+# Calculate additional mapping statistics using Qualimap
 include: "reads_to_reference/analytics/analyze_bam_with_qualimap.smk"
-
-# Calculate additional mapping statistics using preseq
-include: "reads_to_reference/analytics/analyze_bam_with_picard_duplicates.smk"
 
 # Calculate additional mapping statistics using preseq
 include: "reads_to_reference/analytics/analyze_bam_with_preseq_lc_extrap.smk"
