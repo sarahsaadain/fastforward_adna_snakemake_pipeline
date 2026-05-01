@@ -49,7 +49,7 @@ else:
             "{species}/processed/{reference}/mapped/{individual}_{reference}_bwa_aln.log",
         params:
             extra=_ref_mapper_extra,
-        threads: 15
+        threads: 10
         wrapper:
             "v9.3.0/bio/bwa/aln"
 
