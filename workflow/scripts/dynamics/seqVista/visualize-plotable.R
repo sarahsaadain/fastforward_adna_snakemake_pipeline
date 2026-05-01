@@ -33,7 +33,7 @@ if(!debug)
     outfile <- args[2]
 }else{
   rm(list = ls())
-  file      <- "/Users/robertkofler/gh/teplotter/test2/mdg1#LTR_Gypsy_te"
+  file      <- "/Users/robertkofler/gh/seqVista/test2/mdg1#LTR_Gypsy_te"
   outdir    <- tempdir()
   log_scale <- FALSE
   log_auto_threshold <- NULL
