@@ -26,7 +26,7 @@ combined = pd.concat(all_dfs, ignore_index=True)
 # Pivot: rows = Sample, columns = Genus, values = TotalReads
 matrix = combined.pivot_table(
     index='Sample',
-    columns=taxonomic_hierarchy.capitalize(),  # e.g., "Genus"
+    columns=taxonomic_hierarchy.lower(),
     values='TotalReads',
     fill_value=0   # fill missing combinations with 0
 )
