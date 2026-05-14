@@ -264,7 +264,7 @@ def get_scg_library_file_list_for_species(species: str) -> list[tuple[str, str]]
         raise Exception(f"No SCG library files found for species {species}.")
         
     # Return as list of tuples: (filename without extension, full path)
-    library_files_with_filename = [(os.path.splitext(os.path.basename(f))[0].replace('.', '_'), f) for f in library_files]
+    library_files_with_filename = [(get_cleaned_feature_library_id_for_library_path(f), f) for f in library_files]
 
     logger.debug(f"SCG library files for species {species}: {library_files_with_filename}")
 
@@ -281,3 +281,28 @@ def get_scg_library_paths_for_species(species):
 def get_scg_library_ids_for_species(species):
     refs = get_scg_library_file_list_for_species(species)
     return [ref[0] for ref in refs]
+
+# -----------------------------------------------------------------------------------------------
+# Get cleaned feature library ID for a given feature library path
+def get_cleaned_feature_library_id_for_library_path(feature_library_path):
+    return os.path.splitext(os.path.basename(feature_library_path))[0].replace('.', '_')
+
+# -----------------------------------------------------------------------------------------------
+# Get feature library file for a given species and library ID
+def get_feature_library_file_for_species_and_library(species, library_id):
+    libraries = get_feature_library_file_list_for_species(species)
+    for lib in libraries:
+        if lib[0] == library_id:
+            return lib[1]
+    logger.error(f"Feature library with ID {library_id} not found for species {species}. Available libraries: {libraries}")
+    raise Exception(f"Feature library with ID {library_id} not found for species {species}.")
+
+# -----------------------------------------------------------------------------------------------
+# Get scg library file for a given species and library ID
+def get_scg_library_file_for_species_and_library(species, library_id):
+    libraries = get_scg_library_file_list_for_species(species)
+    for lib in libraries:
+        if lib[0] == library_id:
+            return lib[1]
+    logger.error(f"SCG library with ID {library_id} not found for species {species}. Available libraries: {libraries}")
+    raise Exception(f"SCG library with ID {library_id} not found for species {species}.")
