@@ -61,10 +61,10 @@ def create_multiqc_species_individual_input(wildcards):
         for reference in references:
             
             if config.get("pipeline", {}).get("reference_processing", {}).get("analysis", {}).get("execute", True) == True:
-                #file_list.append(f"{species}/results/{reference}/analytics/{individual}/preseq/{individual}_{reference}.lc_extrap")
-                file_list.append(f"{species}/results/{reference}/analytics/{individual}/preseq/{individual}_{reference}.c_curve.txt")
+                #file_list.append(f"{species}/results/{reference}/analytics/individual_level/{individual}/preseq/{individual}_{reference}.lc_extrap")
+                file_list.append(f"{species}/results/{reference}/analytics/individual_level/{individual}/preseq/{individual}_{reference}.c_curve.txt")
                 file_list.append(f"{species}/results/summary/individual_level/{individual}/multiqc_custom_content/qualimap/{individual}_{reference}")
-                file_list.append(f"{species}/results/{reference}/analytics/{individual}/samtools_stats/{individual}_{reference}_final.bam.stats")
+                file_list.append(f"{species}/results/{reference}/analytics/individual_level/{individual}/samtools_stats/{individual}_{reference}_final.bam.stats")
                 file_list.append(f"{species}/results/summary/individual_level/{individual}/multiqc_custom_content/{individual}_{reference}_reads_processing_summary.tsv")
                 file_list.append(f"{species}/results/summary/individual_level/{individual}/multiqc_custom_content/{individual}_{reference}_reads_processing_summary_stacked.tsv")
                 file_list.append(f"{species}/results/summary/individual_level/{individual}/multiqc_custom_content/{individual}_{reference}_coverage_analysis.tsv")
@@ -77,7 +77,7 @@ def create_multiqc_species_individual_input(wildcards):
                 file_list.append(f"{species}/results/summary/individual_level/{individual}/multiqc_custom_content/mapdamage/{individual}_{reference}/lgdistribution.txt")
             
             # if config.get("pipeline", {}).get("reference_processing", {}).get("deduplication", {}).get("execute", True) == True:
-            #     file_list.append(f"{species}/results/{reference}/analytics/{individual}/dedup/{individual}_{reference}_final.dedup.json")
+            #     file_list.append(f"{species}/results/{reference}/analytics/individual_level/{individual}/dedup/{individual}_{reference}_final.dedup.json")
 
     logger.debug(f"MultiQC input files for species {species}: {file_list}")
 

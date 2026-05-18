@@ -33,9 +33,9 @@ def create_multiqc_reference_input(wildcards):
         if config.get("pipeline", {}).get("reference_processing", {}).get("execute", False) == True:
 
             if config.get("pipeline", {}).get("reference_processing", {}).get("analysis", {}).get("execute", True) == True:
-                file_list.append(f"{species}/results/{reference}/analytics/{individual}/preseq/{individual}_{reference}.c_curve.txt")
+                file_list.append(f"{species}/results/{reference}/analytics/individual_level/{individual}/preseq/{individual}_{reference}.c_curve.txt")
                 file_list.append(f"{species}/results/summary/individual_level/{individual}/multiqc_custom_content/qualimap/{individual}_{reference}")
-                file_list.append(f"{species}/results/{reference}/analytics/{individual}/samtools_stats/{individual}_{reference}_final.bam.stats")
+                file_list.append(f"{species}/results/{reference}/analytics/individual_level/{individual}/samtools_stats/{individual}_{reference}_final.bam.stats")
                 file_list.append(f"{species}/results/summary/individual_level/{individual}/multiqc_custom_content/{individual}_{reference}_reads_processing_summary.tsv")
                 file_list.append(f"{species}/results/summary/individual_level/{individual}/multiqc_custom_content/{individual}_{reference}_reads_processing_summary_stacked.tsv")
                 file_list.append(f"{species}/results/summary/individual_level/{individual}/multiqc_custom_content/{individual}_{reference}_coverage_analysis.tsv")

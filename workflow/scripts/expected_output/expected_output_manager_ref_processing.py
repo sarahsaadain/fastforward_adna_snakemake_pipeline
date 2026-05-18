@@ -26,7 +26,7 @@ def get_expected_output_reference_processing(species):
     for reference in references_list:
 
         # Endogenous reads data always generated
-        expected_outputs.append(f"{species}/results/{reference}/analytics/{species}/endogenous/{reference}_endogenous.csv")
+        expected_outputs.append(f"{species}/results/{reference}/analytics/species_level/{species}/endogenous/{reference}_endogenous.csv")
 
         if config.get("pipeline", {}).get("reference_processing", {}).get("analysis", {}).get("settings", {}).get("create_plots", True) == True:
             expected_outputs.append(f"{species}/results/{reference}/plots/endogenous_reads/{species}_{reference}_endogenous_reads_bar_chart.png")
@@ -50,7 +50,7 @@ def get_expected_output_reference_processing(species):
                 expected_outputs.append(f"{species}/results/{reference}/analytics/individual_level/{individual}_{reference}_multiqc.html")
 
             if config.get("pipeline", {}).get("reference_processing", {}).get("analysis", {}).get("settings", {}).get("damage_analysis", True) == True:
-                expected_outputs.append(f"{species}/results/{reference}/analytics/{individual}/mapdamage/")
+                expected_outputs.append(f"{species}/results/{reference}/analytics/individual_level/{individual}/mapdamage/")
             else:
                 logging.info(f"Skipping damage analysis for species {species} and individual {individual} to reference {reference}. Disabled in config.")
 

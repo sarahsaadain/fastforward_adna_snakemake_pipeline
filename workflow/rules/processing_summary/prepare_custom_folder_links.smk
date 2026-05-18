@@ -1,6 +1,6 @@
 rule link_qualimap_for_multiqc:
     input:
-        "{species}/results/{reference}/analytics/{individual}/qualimap"
+        "{species}/results/{reference}/analytics/individual_level/{individual}/qualimap"
     output:
         directory("{species}/results/summary/individual_level/{individual}/multiqc_custom_content/qualimap/{individual}_{reference}")
     message:
@@ -13,9 +13,9 @@ rule link_qualimap_for_multiqc:
 
 rule copy_mapdamage_result_for_multiqc:
     input:
-        GtoA3p  = "{species}/results/{reference}/analytics/{individual}/mapdamage/{individual}_{reference}.3pGtoA_freq.txt",
-        CtoT5p  = "{species}/results/{reference}/analytics/{individual}/mapdamage/{individual}_{reference}.5pCtoT_freq.txt",
-        lg_dist = "{species}/results/{reference}/analytics/{individual}/mapdamage/{individual}_{reference}.lgdistribution.txt",
+        GtoA3p  = "{species}/results/{reference}/analytics/individual_level/{individual}/mapdamage/{individual}_{reference}.3pGtoA_freq.txt",
+        CtoT5p  = "{species}/results/{reference}/analytics/individual_level/{individual}/mapdamage/{individual}_{reference}.5pCtoT_freq.txt",
+        lg_dist = "{species}/results/{reference}/analytics/individual_level/{individual}/mapdamage/{individual}_{reference}.lgdistribution.txt",
     output:
         GtoA3p  = "{species}/results/summary/individual_level/{individual}/multiqc_custom_content/mapdamage/{individual}_{reference}/3pGtoA_freq.txt",
         CtoT5p  = "{species}/results/summary/individual_level/{individual}/multiqc_custom_content/mapdamage/{individual}_{reference}/5pCtoT_freq.txt",
