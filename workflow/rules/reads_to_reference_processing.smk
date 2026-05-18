@@ -34,6 +34,12 @@ include: "reads_to_reference/analytics/analyze_bam_with_qualimap.smk"
 # Calculate additional mapping statistics using preseq
 include: "reads_to_reference/analytics/analyze_bam_with_preseq_lc_extrap.smk"
 
+# Prepare custom content for MultiQC reports
+include: "reads_to_reference/analytics/create_multiqc_prepare_custom_data_breadth.smk"
+include: "reads_to_reference/analytics/create_multiqc_prepare_custom_data_depth.smk"
+include: "reads_to_reference/analytics/create_multiqc_prepare_custom_data_reads_processing.smk"
+include: "reads_to_reference/analytics/create_multiqc_prepare_custom_folder_links.smk"
+
 #create_multiqc_bam.smk
 include: "reads_to_reference/analytics/create_multiqc_bam.smk"
 

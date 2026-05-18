@@ -162,29 +162,43 @@ def get_expected_output_read_merging(species):
 
     return expected_outputs
 
+def get_expected_output_analytics(species):
+
+    if config.get("pipeline", {}).get("raw_reads_processing", {}).get("analysis", {}).get("execute", True) == False:
+        logging.info(f"Skipping analytics for {species}. Disabled in config.")
+        return []
+
+    expected_outputs = []
+
+    # Add MultiQC reports for different read processing stages
+    expected_outputs += get_expected_output_multiqc(species)
+
+     # Summary plots (gated on analysis.settings.create_plots)
+    expected_outputs += get_expected_output_reads_plots(species)
+
+    return expected_outputs
+
 # -----------------------------------------------------------------------------------------------
 # Get all expected output file paths for raw read processing
-def get_expexted_output_raw_read_processing(species):
+def get_expected_output_raw_read_processing(species):
 
     if config.get("pipeline", {}).get("raw_reads_processing", {}).get("execute", True) == False:
         logging.info(f"Skipping raw read processing for {species}. Disabled in config.")
         return []
     
-    # Add FastQC outputs for raw reads
     expected_outputs = []
 
+    # Add merged reads to expected outputs since they are a product of raw read processing
     expected_outputs += get_expected_output_read_merging(species)
 
-    # Add MultiQC reports for different read processing stages
-    expected_outputs += get_expected_output_multiqc(species)
-
-    # Add ECMSD contamination analysis outputs
+    # Add  contamination outputs
     expected_outputs += get_expected_output_contamination(species)
 
     # Read count statistics always run
-    expected_outputs.append(f"{species}/results/reads/statistics/{species}_reads_counts.csv")
+    expected_outputs.append(f"{species}/results/reads/statistics/{species}_reads_counts.csv")   
 
-    # Summary plots (gated on analysis.settings.create_plots)
-    expected_outputs += get_expected_output_reads_plots(species)
+    # Add analytics outputs (MultiQC reports and read count plots)
+    expected_outputs += get_expected_output_analytics(species)
 
+    
     return expected_outputs

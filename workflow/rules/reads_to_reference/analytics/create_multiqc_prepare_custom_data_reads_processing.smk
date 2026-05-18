@@ -30,19 +30,19 @@ rule prepare_custom_data_reads_processing_absolute_values:
         endogenous = prepare_custom_data_reads_processing_endogenous,
         dedup = prepare_custom_data_reads_processing_dedup
     output:
-        "{species}/results/summary/individual_level/{individual}/multiqc_custom_content/{individual}_{reference}_reads_processing_summary.tsv",
+        "{species}/results/{reference}/analytics/individual_level/{individual}/multiqc_custom_content/{individual}_{reference}_reads_processing_summary.tsv",
     conda:
-        "../../envs/python_and_r.yaml",
+        "../../../envs/python_and_r.yaml",
     params:
         individual="{individual}",
         reference="{reference}",
     script:
-        "../../scripts/processing_summary/prepare_custom_data_reads_processing.py"
+        "../../../scripts/processing_summary/prepare_custom_data_reads_processing.py"
         
 rule combine_custom_data_reads_processing_absolute_values:
     input:
         lambda wildcards: expand(
-            "{species}/results/summary/individual_level/{individual}/multiqc_custom_content/{individual}_{reference}_reads_processing_summary.tsv",
+            "{species}/results/{reference}/analytics/individual_level/{individual}/multiqc_custom_content/{individual}_{reference}_reads_processing_summary.tsv",
             species=wildcards.species,
             reference=wildcards.reference,
             individual=get_individuals_for_species(wildcards.species),
@@ -50,7 +50,7 @@ rule combine_custom_data_reads_processing_absolute_values:
     output:
         "{species}/results/summary/species_level/{species}_overall/multiqc_custom_content/{species}_{reference}_reads_processing_summary_combined.tsv",
     conda:
-        "../../envs/python_and_r.yaml",
+        "../../../envs/python_and_r.yaml",
     run:
         import pandas as pd
         import os
@@ -71,11 +71,11 @@ rule combine_custom_data_reads_processing_absolute_values:
 
 rule prepare_custom_data_reads_processing_stacked_values:
     input:
-        "{species}/results/summary/individual_level/{individual}/multiqc_custom_content/{individual}_{reference}_reads_processing_summary.tsv",
+        "{species}/results/{reference}/analytics/individual_level/{individual}/multiqc_custom_content/{individual}_{reference}_reads_processing_summary.tsv",
     output:
-        "{species}/results/summary/individual_level/{individual}/multiqc_custom_content/{individual}_{reference}_reads_processing_summary_stacked.tsv",
+        "{species}/results/{reference}/analytics/individual_level/{individual}/multiqc_custom_content/{individual}_{reference}_reads_processing_summary_stacked.tsv",
     conda:
-        "../../envs/python_and_r.yaml",
+        "../../../envs/python_and_r.yaml",
     run:
         import pandas as pd
 
@@ -103,7 +103,7 @@ rule prepare_custom_data_reads_processing_stacked_values:
 rule combine_custom_data_reads_processing_stacked_values:
     input:
         lambda wildcards: expand(
-            "{species}/results/summary/individual_level/{individual}/multiqc_custom_content/{individual}_{reference}_reads_processing_summary_stacked.tsv",
+            "{species}/results/{reference}/analytics/individual_level/{individual}/multiqc_custom_content/{individual}_{reference}_reads_processing_summary_stacked.tsv",
             species=wildcards.species,
             reference=wildcards.reference,
             individual=get_individuals_for_species(wildcards.species),
@@ -111,7 +111,7 @@ rule combine_custom_data_reads_processing_stacked_values:
     output:
         "{species}/results/summary/species_level/{species}_overall/multiqc_custom_content/{species}_{reference}_reads_processing_summary_stacked_combined.tsv",
     conda:
-        "../../envs/python_and_r.yaml",
+        "../../../envs/python_and_r.yaml",
     run:
         import pandas as pd
         import os

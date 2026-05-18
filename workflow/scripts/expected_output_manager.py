@@ -46,7 +46,7 @@ def get_expected_outputs_from_pipeline(wildcards):
     # Loop over each species defined in the config (must be available in the global scope)
     for species in config.get("species", {}):
         # For each species, gather expected output file paths from all relevant processing stages
-        expected_output += get_expexted_output_raw_read_processing(species)
+        expected_output += get_expected_output_raw_read_processing(species)
         expected_output += get_expected_output_reference_processing(species)
         expected_output += get_expected_output_dynamics_processing(species)
         expected_output += get_expected_output_summary_processing(species)
