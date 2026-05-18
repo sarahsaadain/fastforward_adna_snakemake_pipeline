@@ -25,19 +25,20 @@ def get_expected_output_reference_processing(species):
 
     for reference in references_list:
 
+        # Endogenous reads data always generated
+        expected_outputs.append(f"{species}/results/{reference}/analytics/{species}/endogenous/{reference}_endogenous.csv")
+
         if config.get("pipeline", {}).get("reference_processing", {}).get("analysis", {}).get("settings", {}).get("create_plots", True) == True:
-            if config.get("pipeline", {}).get("reference_processing", {}).get("analysis", {}).get("settings", {}).get("endogenous_reads", True) == True:
-                expected_outputs.append(f"{species}/results/{reference}/plots/endogenous_reads/{species}_{reference}_endogenous_reads_bar_chart.png")
-                expected_outputs.append(f"{species}/results/{reference}/plots/endogenous_reads/{species}_{reference}_raw_and_endogenous_reads_bar_chart.png")
-            if config.get("pipeline", {}).get("reference_processing", {}).get("analysis", {}).get("execute", True) == True:
-                expected_outputs.append(f"{species}/results/{reference}/plots/coverage/{species}_{reference}_individual_depth_coverage_violin.png")
-                expected_outputs.append(f"{species}/results/{reference}/plots/coverage/{species}_{reference}_individual_depth_coverage_bar.png")
-                expected_outputs.append(f"{species}/results/{reference}/plots/coverage/{species}_{reference}_individual_coverage_breadth_bar.png")
-                expected_outputs.append(f"{species}/results/{reference}/plots/coverage/{species}_{reference}_individual_coverage_breadth_violin.png")
+            expected_outputs.append(f"{species}/results/{reference}/plots/endogenous_reads/{species}_{reference}_endogenous_reads_bar_chart.png")
+            expected_outputs.append(f"{species}/results/{reference}/plots/endogenous_reads/{species}_{reference}_raw_and_endogenous_reads_bar_chart.png")
+            expected_outputs.append(f"{species}/results/{reference}/plots/coverage/{species}_{reference}_individual_depth_coverage_violin.png")
+            expected_outputs.append(f"{species}/results/{reference}/plots/coverage/{species}_{reference}_individual_depth_coverage_bar.png")
+            expected_outputs.append(f"{species}/results/{reference}/plots/coverage/{species}_{reference}_individual_coverage_breadth_bar.png")
+            expected_outputs.append(f"{species}/results/{reference}/plots/coverage/{species}_{reference}_individual_coverage_breadth_violin.png")
         else:
             logging.info(f"Skipping plots for species {species} and reference {reference}. Disabled in config.")
 
-        if config.get("pipeline", {}).get("reference_processing", {}).get("analysis", {}).get("species", True) == True:
+        if config.get("pipeline", {}).get("reference_processing", {}).get("analysis", {}).get("settings", {}).get("species_multiqc", True) == True:
             expected_outputs.append(f"{species}/results/{reference}/analytics/{species}_{reference}_multiqc.html")
 
         for individual in individuals:
@@ -45,7 +46,7 @@ def get_expected_output_reference_processing(species):
             expected_outputs.append(f"{species}/processed/{reference}/mapped/{individual}_{reference}_final.bam")
             expected_outputs.append(f"{species}/processed/{reference}/mapped/{individual}_{reference}_final.bam.bai")
 
-            if config.get("pipeline", {}).get("reference_processing", {}).get("analysis", {}).get("individual", True) == True:
+            if config.get("pipeline", {}).get("reference_processing", {}).get("analysis", {}).get("settings", {}).get("individual_multiqc", True) == True:
                 expected_outputs.append(f"{species}/results/{reference}/analytics/{individual}_{reference}_multiqc.html")
 
             if config.get("pipeline", {}).get("reference_processing", {}).get("analysis", {}).get("settings", {}).get("damage_analysis", True) == True:
@@ -55,9 +56,9 @@ def get_expected_output_reference_processing(species):
 
             if config.get("pipeline", {}).get("reference_processing", {}).get("filter_unmapped_reads", {}).get("execute", False) == True:
                 action = config.get("pipeline", {}).get("reference_processing", {}).get("filter_unmapped_reads", {}).get("settings", {}).get("action", "remove")
-                if action == "remove":
-                    # _mapped_only.bam is a temp intermediate; get_final_bam copies
-                    # its content to _final.bam, which is already in expected_outputs.
+                if action in ("keep", "remove"):
+                    # keep: unmapped reads stay in the final BAM (no extra output)
+                    # remove: _mapped_only.bam is a temp intermediate; get_final_bam copies to _final.bam
                     pass
                 elif action == "extract_fastq":
                     expected_outputs.append(f"{species}/processed/{reference}/unmapped/{individual}_{reference}_unmapped.fastq.gz")

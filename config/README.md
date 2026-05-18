@@ -193,19 +193,18 @@ Optionally removes or extracts reads that did not map to the reference. Default:
 
 | Setting | Default | Description |
 |---|---|---|
-| `settings.action` | `remove` | What to do with unmapped reads: `remove` — write a mapped-reads-only BAM; `extract_fastq` — write unmapped reads to a compressed FASTQ; `extract_fasta` — write unmapped reads to a compressed FASTA. |
+| `settings.action` | `keep` | What to do with unmapped reads: `keep` — retain in final BAM (default, must be changed explicitly); `remove` — write a mapped-reads-only BAM; `extract_fastq` — write unmapped reads to a compressed FASTQ; `extract_fasta` — write unmapped reads to a compressed FASTA. |
 
 #### Other `reference_processing` steps
 
 | Step | Default | Description |
 |---|---|---|
 | `damage_rescaling` | on | Profiles cytosine deamination and rescales base quality scores using mapDamage2. |
-| `analysis` | on | Computes coverage breadth and mean depth; runs Qualimap and Preseq. Also triggers damage visualisation and endogenous content calculation (see `settings` below). |
-| `analysis.individual` | on | Generate a per-individual BAM MultiQC report. |
-| `analysis.species` | on | Generate a per-reference MultiQC report aggregating all individuals. |
+| `analysis` | on | Computes coverage breadth and mean depth; runs Qualimap and Preseq. Endogenous content data always generated. |
 | `analysis.settings.damage_analysis` | on | Visualises damage patterns (mapDamage2) and includes them in the MultiQC report. |
-| `analysis.settings.endogenous_reads` | on | Calculates the fraction of reads that mapped to the reference (endogenous content). |
 | `analysis.settings.create_plots` | on | Generate coverage breadth/depth and endogenous reads plots per reference. |
+| `analysis.settings.individual_multiqc` | on | Generate a per-individual BAM MultiQC report. |
+| `analysis.settings.species_multiqc` | on | Generate a per-reference MultiQC report aggregating all individuals. |
 
 ### Stage: `dynamics`
 
@@ -231,9 +230,8 @@ Consolidates all QC outputs into MultiQC HTML reports.
 
 | Setting | Default | Description |
 |---|---|---|
-| `individual` | on | Generate a per-individual MultiQC summary report (all references, one individual). |
-| `species` | on | Generate a per-species MultiQC summary report (all individuals, all references). |
-| `settings` | — | Reserved for future per-report configuration options. |
+| `settings.individual_multiqc` | on | Generate a per-individual MultiQC summary report (all references, one individual). |
+| `settings.species_multiqc` | on | Generate a per-species MultiQC summary report (all individuals, all references). |
 
 ### Example `config.yaml`
 
@@ -336,16 +334,15 @@ pipeline:
       execute: false
       settings:
         # Options: "remove", "extract_fastq", "extract_fasta"
-        action: "remove"
+        action: "keep"
 
     analysis:
       execute: true
-      individual: true
-      species: true
       settings:
         damage_analysis: true
-        endogenous_reads: true
         create_plots: true
+        individual_multiqc: true
+        species_multiqc: true
 
   dynamics:
     execute: true
@@ -365,9 +362,9 @@ pipeline:
 
   summary_processing:
     execute: true
-    individual: true
-    species: true
-    settings: {}
+    settings:
+      individual_multiqc: true
+      species_multiqc: true
 
 # Species details
 species:

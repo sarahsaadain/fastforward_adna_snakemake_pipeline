@@ -863,13 +863,14 @@
               Optionally dispose of reads that did not map to the reference. Choose between writing a
               <strong>mapped-reads-only BAM</strong>, or extracting the unmapped reads to <strong>FASTQ.gz</strong>
               or <strong>FASTA.gz</strong> for downstream analysis (e.g. further contamination screening).
-              <div class="when-hint"><span class="def-pill off">Default: OFF</span>Turn on to reduce final BAM file size by removing unmapped reads (<strong>remove</strong>), or to investigate what did not map to the reference — useful for metagenomic screening of non-endogenous content (<strong>extract_fastq / extract_fasta</strong>). Not needed for standard aDNA workflows.</div>
+              <div class="when-hint"><span class="def-pill off">Default: OFF</span>Turn on to process unmapped reads. The default action is <strong>keep</strong> (no-op) — you must explicitly change it to <strong>remove</strong> (mapped-only BAM), <strong>extract_fastq</strong>, or <strong>extract_fasta</strong>. Not needed for standard aDNA workflows.</div>
             </div>
             <div class="subsection-body open">
               <div class="field">
                 <label>Action</label>
                 <select id="fur_action" onchange="render()">
-                  <option value="remove" selected>remove &mdash; write mapped-reads-only BAM</option>
+                  <option value="keep" selected>keep &mdash; retain unmapped reads in final BAM (change explicitly)</option>
+                  <option value="remove">remove &mdash; write mapped-reads-only BAM</option>
                   <option value="extract_fastq">extract_fastq &mdash; unmapped reads to FASTQ.gz</option>
                   <option value="extract_fasta">extract_fasta &mdash; unmapped reads to FASTA.gz</option>
                 </select>
@@ -902,13 +903,6 @@
                   <span class="slider"></span>
                 </label>
                 <label class="lbl" for="da_exec">Damage analysis <span style="font-size:.7rem;color:var(--text-muted)">(mapDamage2 — damage visualisation &amp; statistics)</span></label>
-              </div>
-              <div class="toggle-wrap" style="margin-top:6px">
-                <label class="toggle">
-                  <input type="checkbox" id="era_exec" checked onchange="render()">
-                  <span class="slider"></span>
-                </label>
-                <label class="lbl" for="era_exec">Endogenous reads <span style="font-size:.7rem;color:var(--text-muted)">(samtools stats — fraction mapped)</span></label>
               </div>
               <div class="toggle-wrap" style="margin-top:6px">
                 <label class="toggle">
@@ -1295,12 +1289,11 @@ function buildYAML() {
   p(0, '');
   p(4, 'analysis:');
   kv(6, 'execute', gb('cov_exec'));
-  kv(6, 'individual', gb('cov_individual'));
-  kv(6, 'species', gb('cov_species'));
   p(6, 'settings:');
   kv(8, 'damage_analysis', gb('da_exec'));
-  kv(8, 'endogenous_reads', gb('era_exec'));
   kv(8, 'create_plots', gb('rp_create_plots'));
+  kv(8, 'individual_multiqc', gb('cov_individual'));
+  kv(8, 'species_multiqc', gb('cov_species'));
   p(0, ''); p(0, '');
   p(2, 'dynamics:');
   kv(4, 'execute', gb('dyn_exec'));
@@ -1318,9 +1311,9 @@ function buildYAML() {
   p(0, '');
   p(2, 'summary_processing:');
   kv(4, 'execute', gb('sp_exec'));
-  kv(4, 'individual', gb('sp_individual'));
-  kv(4, 'species', gb('sp_species'));
-  p(4, 'settings: {}');
+  p(4, 'settings:');
+  kv(6, 'individual_multiqc', gb('sp_individual'));
+  kv(6, 'species_multiqc', gb('sp_species'));
   p(0, '');
   p(0, '# Species-specific settings');
   p(0, 'species:');
@@ -1522,11 +1515,10 @@ function populateForm(c) {
   sv('fur_action', (fur.settings||{}).action);
   const rpas = (rp.analysis||{}).settings||{};
   sb('da_exec',        rpas.damage_analysis);
-  sb('era_exec',       rpas.endogenous_reads);
   sb('rp_create_plots',rpas.create_plots);
   sb('cov_exec',      (rp.analysis||{}).execute);                  dot('cov_exec','d_cov');
-  sb('cov_individual',(rp.analysis||{}).individual);
-  sb('cov_species',   (rp.analysis||{}).species);
+  sb('cov_individual', rpas.individual_multiqc);
+  sb('cov_species',    rpas.species_multiqc);
 
   sb('dyn_exec', dyn.execute);
   toggleStage('dyn_body', document.getElementById('dyn_exec'));
@@ -1539,9 +1531,10 @@ function populateForm(c) {
   sv('sv_individual_plots', svs.individual_plots || 'plot');
   sv('sv_comparison_plots', svs.comparison_plots || 'plot');
   sb('pfn_exec', (dyn.pf_normalization||{}).execute);             dot('pfn_exec','d_pfn');
+  const sps = sp.settings || {};
   sb('sp_exec',       sp.execute);
-  sb('sp_individual', sp.individual);
-  sb('sp_species',    sp.species);
+  sb('sp_individual', sps.individual_multiqc);
+  sb('sp_species',    sps.species_multiqc);
 
   document.getElementById('species-list').innerHTML = '';
   speciesSeq = 0;
@@ -1584,8 +1577,8 @@ function resetDefaults() {
         mapping: { settings: { mapper: 'bwa-aln' } },
         deduplication: { execute: false, settings: { min_contigs_per_cluster: 10, max_contigs_per_cluster: 500 } },
         damage_rescaling: { execute: true },
-        filter_unmapped_reads: { execute: false, settings: { action: 'remove' } },
-        analysis: { execute: true, individual: true, species: true, settings: { damage_analysis: true, endogenous_reads: true, create_plots: true } }
+        filter_unmapped_reads: { execute: false, settings: { action: 'keep' } },
+        analysis: { execute: true, settings: { damage_analysis: true, create_plots: true, individual_multiqc: true, species_multiqc: true } }
       },
       dynamics: {
         execute: true,
@@ -1593,7 +1586,7 @@ function resetDefaults() {
         seqvista: { execute: true, settings: { individual_plots: 'plot', comparison_plots: 'plot' } },
         pf_normalization: { execute: true }
       },
-      summary_processing: { execute: true, individual: true, species: true }
+      summary_processing: { execute: true, settings: { individual_multiqc: true, species_multiqc: true } }
     },
     species: { demo: { name: 'Dmel Demo' } }
   });

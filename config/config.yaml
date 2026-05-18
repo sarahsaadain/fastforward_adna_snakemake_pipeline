@@ -125,30 +125,29 @@ pipeline:
       execute: true
 
     filter_unmapped_reads:
-      # When true, unmapped reads will be removed or extracted (Default: false)
+      # When true, unmapped reads will be processed according to action (Default: false)
       execute: false
       settings:
         # What to do with unmapped reads. Choose one of:
+        #   "keep"          — retain unmapped reads in the final BAM (default — must be changed explicitly)
         #   "remove"        — write a mapped-reads-only BAM  ({individual}_{reference}_mapped_only.bam)
         #   "extract_fastq" — write unmapped reads to a compressed FASTQ ({individual}_{reference}_unmapped.fastq.gz)
         #   "extract_fasta" — write unmapped reads to a compressed FASTA ({individual}_{reference}_unmapped.fasta.gz)
-        action: "remove"
+        action: "keep"
 
     # BAM analysis settings (coverage, Qualimap, Preseq, damage, endogenous reads)
     analysis:
       # When true, this sub-stage will be executed (Default: true)
       execute: true
-      # When true, generate a per-individual MultiQC BAM report (Default: true)
-      individual: true
-      # When true, generate a per-reference MultiQC report across all individuals (Default: true)
-      species: true
       settings:
         # Run mapDamage2 damage visualisation and statistics (Default: true)
         damage_analysis: true
-        # Calculate fraction of reads that mapped — endogenous content (Default: true)
-        endogenous_reads: true
         # When true, generate coverage and endogenous reads plots (Default: true)
         create_plots: true
+        # When true, generate a per-individual MultiQC BAM report (Default: true)
+        individual_multiqc: true
+        # When true, generate a per-reference MultiQC report across all individuals (Default: true)
+        species_multiqc: true
 
 
   dynamics:
@@ -184,11 +183,11 @@ pipeline:
   summary_processing:
     # When true, this stage will be executed (Default: true)
     execute: true
-    # When true, generate a per-individual MultiQC summary report (Default: true)
-    individual: true
-    # When true, generate a per-species MultiQC summary report (Default: true)
-    species: true
-    settings: {}
+    settings:
+      # When true, generate a per-individual MultiQC summary report (Default: true)
+      individual_multiqc: true
+      # When true, generate a per-species MultiQC summary report (Default: true)
+      species_multiqc: true
 
 # Species-specific settings
 species:
