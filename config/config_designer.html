@@ -1055,25 +1055,6 @@
             </div>
           </div>
 
-          <!-- PF Normalization -->
-          <div class="subsection">
-            <div class="subsection-header">
-              <span class="sdot on" id="d_pfn"></span>
-              <span class="subsection-title">PF Normalization</span>
-              <label class="toggle" onclick="event.stopPropagation()">
-                <input type="checkbox" id="pfn_exec" checked onchange="dot('pfn_exec','d_pfn'); render()">
-                <span class="slider"></span>
-              </label>
-            </div>
-            <div class="step-desc">
-              SCG coverage serves as the <strong>normalisation denominator</strong>, making TE abundance estimates
-              comparable across individuals regardless of differences in sequencing depth or mapping efficiency.
-              Per-individual coverage files are combined into a species-level table, and an R-based plot shows
-              normalised TE abundance across all individuals. Individual order in the plot follows the species individual list.
-              <div class="when-hint"><span class="def-pill on">Default: ON</span>Should almost always remain on when Dynamics is enabled — without SCG normalisation, raw TE counts are not comparable across individuals with different sequencing depths. Turn off only if you specifically want unnormalised coverage values.</div>
-            </div>
-          </div>
-
         </div><!-- /#dyn_body -->
       </div>
     </div>
@@ -1330,8 +1311,6 @@ function buildYAML() {
   p(6, 'settings:');
   kv(8, 'individual_plots', gv('sv_individual_plots'));
   kv(8, 'comparison_plots', gv('sv_comparison_plots'));
-  p(4, 'pf_normalization:');
-  kv(6, 'execute', gb('pfn_exec'));
   p(0, '');
   p(2, 'summary_processing:');
   kv(4, 'execute', gb('sp_exec'));
@@ -1557,7 +1536,6 @@ function populateForm(c) {
   const svs = (dyn.seqvista||{}).settings||{};
   sv('sv_individual_plots', svs.individual_plots || 'plot');
   sv('sv_comparison_plots', svs.comparison_plots || 'plot');
-  sb('pfn_exec', (dyn.pf_normalization||{}).execute);             dot('pfn_exec','d_pfn');
   const sps = sp.settings || {};
   sb('sp_exec',       sp.execute);
   sb('sp_individual', sps.individual_multiqc);
@@ -1610,8 +1588,7 @@ function resetDefaults() {
       dynamics: {
         execute: true,
         mapping: { settings: { mapper: 'bwa-aln' } },
-        seqvista: { execute: true, settings: { individual_plots: 'plot', comparison_plots: 'plot' } },
-        pf_normalization: { execute: true }
+        seqvista: { execute: true, settings: { individual_plots: 'plot', comparison_plots: 'plot' } }
       },
       summary_processing: { execute: true, settings: { individual_multiqc: true, species_multiqc: true } }
     },

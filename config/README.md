@@ -222,10 +222,11 @@ TE and genomic feature abundance analysis — maps to a combined SCG + feature l
 
 #### Other `dynamics` steps
 
-| Step | Default | Description |
+| Step / Setting | Default | Description |
 |---|---|---|
-| `seqvista` | on | Generates per-position coverage profiles and per-individual TE occupancy plots. |
-| `pf_normalization` | on | Normalises TE abundance by SCG coverage for cross-individual comparability. |
+| `seqvista` | on | Generates SO profiles — per-position coverage, SNP, and indel information — normalised into a SeqVista directory structure for per-individual TE occupancy plots and a faceted species-level comparison plot. |
+| `seqvista.settings.individual_plots` | `plot` | `plot` — generate plotables and render per-individual plots; `plotable_only` — generate plotables only, skip rendering; `skip` — skip both. |
+| `seqvista.settings.comparison_plots` | `plot` | `plot` — generate plotables and render the faceted species comparison plot; `plotable_only` — generate plotables only, skip rendering; `skip` — skip both. |
 
 ### Stage: `summary_processing`
 
@@ -362,9 +363,9 @@ pipeline:
 
     seqvista:
       execute: true
-
-    pf_normalization:
-      execute: true
+      settings:
+        individual_plots: "plot"
+        comparison_plots: "plot"
 
   summary_processing:
     execute: true
