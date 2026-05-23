@@ -1,10 +1,15 @@
 ####################################################
 # Snakemake rules
 ####################################################
-_ref_settings     = config.get("pipeline", {}).get("reference_processing", {}).get("mapping", {}).get("settings", {})
-_ref_mapper       = _ref_settings.get("mapper", "bwa-mem2")
-_BWA_ALN_DEFAULTS = "-n 0.01 -k 2 -l 1024 -o 2"  # Oliva et al. 2021 (10.1093/bib/bbab076)
-_ref_mapper_extra = _ref_settings.get("mapper_extra_params", _BWA_ALN_DEFAULTS if _ref_mapper == "bwa-aln" else "")
+_ref_settings      = config.get("pipeline", {}).get("reference_processing", {}).get("mapping", {}).get("settings", {})
+_ref_mapper        = _ref_settings.get("mapper", "bwa-mem2")
+_BWA_ALN_DEFAULTS  = "-n 0.01 -k 2 -l 1024 -o 2"  # Oliva et al. 2021 (10.1093/bib/bbab076)
+_MINIMAP2_DEFAULTS = "-ax sr"
+_ref_mapper_extra  = _ref_settings.get(
+    "mapper_extra_params",
+    _BWA_ALN_DEFAULTS if _ref_mapper == "bwa-aln" else
+    _MINIMAP2_DEFAULTS if _ref_mapper == "minimap2" else ""
+)
 
 if _ref_mapper == "minimap2":
     rule map_reads_to_reference_minimap2:
@@ -16,7 +21,7 @@ if _ref_mapper == "minimap2":
         log:
             "{species}/processed/{reference}/mapped/{individual}_{reference}.bam.log"
         params:
-            extra="-ax sr " + _ref_mapper_extra,
+            extra=_ref_mapper_extra,
             sorting="none",
         threads: 15
         wrapper:
