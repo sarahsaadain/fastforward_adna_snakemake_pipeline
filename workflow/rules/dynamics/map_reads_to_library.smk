@@ -4,8 +4,9 @@
 ####################################################
 _dyn_settings     = config.get("pipeline", {}).get("dynamics", {}).get("mapping", {}).get("settings", {})
 _dyn_mapper       = _dyn_settings.get("mapper", "bwa-mem2")
-_BWA_ALN_DEFAULTS = "-n 0.01 -k 2 -l 1024 -o 2"  # Oliva et al. 2021 (10.1093/bib/bbab076)
-_dyn_mapper_extra = _dyn_settings.get("mapper_extra_params", _BWA_ALN_DEFAULTS if _dyn_mapper == "bwa-aln" else "")
+_BWA_ALN_DEFAULTS    = "-n 0.01 -k 2 -l 1024 -o 2"  # Oliva et al. 2021 (10.1093/bib/bbab076)
+_MINIMAP2_DEFAULTS   = "-ax sr"
+_dyn_mapper_extra = _dyn_settings.get("mapper_extra_params", _BWA_ALN_DEFAULTS if _dyn_mapper == "bwa-aln" else (_MINIMAP2_DEFAULTS if _dyn_mapper == "minimap2" else ""))
 
 if _dyn_mapper == "minimap2":
     rule index_library_for_mapping_minimap2:
@@ -29,7 +30,7 @@ if _dyn_mapper == "minimap2":
             "{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg_minimap2.log",
         message: "Mapping reads of {wildcards.individual} to {wildcards.species} SCG and Feature library with minimap2"
         params:
-            extra="-ax sr " + _dyn_mapper_extra,
+            extra=_dyn_mapper_extra,
             sorting="coordinate"
         threads: 10
         wrapper:
