@@ -11,7 +11,7 @@ import logging
 # Get expected output file paths for FastQC (raw reads)
 def get_expected_output_fastqc_raw(species):
 
-    if config.get("pipeline", {}).get("raw_reads_processing", {}).get("analysis", {}).get("settings", {}).get("quality_checking_raw", True) == False:
+    if config.get("pipeline", {}).get("raw_reads_processing", {}).get("analysis", {}).get("settings", {}).get("multiqc_raw_reads", True) == False:
         logging.info(f"Skipping FastQC for raw reads for {species}. Disabled in config.")
         return []
 
@@ -29,7 +29,7 @@ def get_expected_output_fastqc_raw(species):
 # -----------------------------------------------------------------------------------------------
 # Get expected output file paths for FastQC (adapter trimmed reads)
 def get_expected_output_fastqc_trimmed(species):
-    if config.get("pipeline", {}).get("raw_reads_processing", {}).get("analysis", {}).get("settings", {}).get("quality_checking_trimmed", True) == False:
+    if config.get("pipeline", {}).get("raw_reads_processing", {}).get("analysis", {}).get("settings", {}).get("multiqc_trimmed_reads", True) == False:
         logging.info(f"Skipping FastQC for trimmed reads for {species}. Disabled in config.")
         return []
 
@@ -41,7 +41,7 @@ def get_expected_output_fastqc_trimmed(species):
 # -----------------------------------------------------------------------------------------------
 # Get expected output file paths for FastQC (adapter removed reads)
 def get_expected_output_fastqc_quality_filtered(species):
-    if config.get("pipeline", {}).get("raw_reads_processing", {}).get("analysis", {}).get("settings", {}).get("quality_checking_quality_filtered", True) == False:
+    if config.get("pipeline", {}).get("raw_reads_processing", {}).get("analysis", {}).get("settings", {}).get("multiqc_quality_filtered_reads", True) == False:
         logging.info(f"Skipping FastQC for quality filtered reads for {species}. Disabled in config.")
         return []
 
@@ -117,22 +117,22 @@ def get_expected_output_multiqc(species):
     expected_outputs = []
 
     # Add MultiQC reports for different read processing stages
-    if config.get("pipeline", {}).get("raw_reads_processing", {}).get("analysis", {}).get("settings", {}).get("quality_checking_raw", True) == True:
+    if config.get("pipeline", {}).get("raw_reads_processing", {}).get("analysis", {}).get("settings", {}).get("multiqc_raw_reads", True) == True:
         expected_outputs.append(f"{species}/results/reads/{species}_multiqc_raw.html")
     else:
         logging.info(f"Skipping MultiQC report for raw reads for {species}. Disabled in config.")
 
-    if config.get("pipeline", {}).get("raw_reads_processing", {}).get("analysis", {}).get("settings", {}).get("quality_checking_trimmed", True) == True:
+    if config.get("pipeline", {}).get("raw_reads_processing", {}).get("analysis", {}).get("settings", {}).get("multiqc_trimmed_reads", True) == True:
         expected_outputs.append(f"{species}/results/reads/{species}_multiqc_trimmed.html")
     else:
         logging.info(f"Skipping MultiQC report for trimmed reads for {species}. Disabled in config.")
 
-    if config.get("pipeline", {}).get("raw_reads_processing", {}).get("analysis", {}).get("settings", {}).get("quality_checking_quality_filtered", True) == True:
+    if config.get("pipeline", {}).get("raw_reads_processing", {}).get("analysis", {}).get("settings", {}).get("multiqc_quality_filtered_reads", True) == True:
         expected_outputs.append(f"{species}/results/reads/{species}_multiqc_quality_filtered.html")
     else:
         logging.info(f"Skipping MultiQC report for quality filtered reads for {species}. Disabled in config.")
     
-    if config.get("pipeline", {}).get("raw_reads_processing", {}).get("analysis", {}).get("settings", {}).get("quality_checking_merged", True) == True:
+    if config.get("pipeline", {}).get("raw_reads_processing", {}).get("analysis", {}).get("settings", {}).get("multiqc_merged_reads", True) == True:
         expected_outputs.append(f"{species}/results/reads/{species}_multiqc_merged.html")
     else:
         logging.info(f"Skipping MultiQC report for merged reads for {species}. Disabled in config.")

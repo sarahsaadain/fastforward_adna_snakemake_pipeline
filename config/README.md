@@ -120,10 +120,10 @@ Controls FastQC + MultiQC quality reports at each processing stage and read coun
 
 | Setting | Default | Description |
 |---|---|---|
-| `settings.quality_checking_raw` | on | FastQC/MultiQC on raw reads. |
-| `settings.quality_checking_trimmed` | on | FastQC/MultiQC on adapter-trimmed reads. |
-| `settings.quality_checking_quality_filtered` | on | FastQC/MultiQC on quality-filtered reads. |
-| `settings.quality_checking_merged` | on | FastQC/MultiQC on merged per-individual reads. |
+| `settings.multiqc_raw_reads` | on | FastQC/MultiQC on raw reads. |
+| `settings.multiqc_trimmed_reads` | on | FastQC/MultiQC on adapter-trimmed reads. |
+| `settings.multiqc_quality_filtered_reads` | on | FastQC/MultiQC on quality-filtered reads. |
+| `settings.multiqc_merged_reads` | on | FastQC/MultiQC on merged per-individual reads. |
 | `settings.create_plots` | on | Generate read count bar plots per species. |
 
 #### `adapter_removal`
@@ -205,6 +205,9 @@ Optionally removes or extracts reads that did not map to the reference. Default:
 | `analysis.settings.create_plots` | on | Generate coverage breadth/depth and endogenous reads plots per reference. |
 | `analysis.settings.individual_multiqc` | on | Generate a per-individual BAM MultiQC report. |
 | `analysis.settings.species_multiqc` | on | Generate a per-reference MultiQC report aggregating all individuals. |
+| `analysis.settings.c_curve` | on | Include Preseq c_curve complexity data in MultiQC reports. |
+| `analysis.settings.qualimap` | on | Include Qualimap BAM QC data in MultiQC reports. |
+| `analysis.settings.samtools_stats` | on | Include samtools stats data in MultiQC reports. |
 
 ### Stage: `dynamics`
 
@@ -256,10 +259,10 @@ pipeline:
     analysis:
       execute: true
       settings:
-        quality_checking_raw: true
-        quality_checking_trimmed: true
-        quality_checking_quality_filtered: true
-        quality_checking_merged: true
+        multiqc_raw_reads: true
+        multiqc_trimmed_reads: true
+        multiqc_quality_filtered_reads: true
+        multiqc_merged_reads: true
         create_plots: true
 
     adapter_removal:
@@ -343,6 +346,9 @@ pipeline:
         create_plots: true
         individual_multiqc: true
         species_multiqc: true
+        c_curve: true
+        qualimap: true
+        samtools_stats: true
 
   dynamics:
     execute: true

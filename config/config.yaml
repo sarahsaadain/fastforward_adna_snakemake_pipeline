@@ -93,13 +93,13 @@ pipeline:
       execute: true
       settings:
         # Run FastQC/MultiQC on raw reads (Default: true)
-        quality_checking_raw: true
+        multiqc_raw_reads: true
         # Run FastQC/MultiQC on adapter-trimmed reads (Default: true)
-        quality_checking_trimmed: true
+        multiqc_trimmed_reads: true
         # Run FastQC/MultiQC on quality-filtered reads (Default: true)
-        quality_checking_quality_filtered: true
+        multiqc_quality_filtered_reads: true
         # Run FastQC/MultiQC on merged per-individual reads (Default: true)
-        quality_checking_merged: true
+        multiqc_merged_reads: true
         # When true, generate read count bar plots (Default: true)
         create_plots: true
 
@@ -161,6 +161,12 @@ pipeline:
         individual_multiqc: true
         # When true, generate a per-reference MultiQC report across all individuals (Default: true)
         species_multiqc: true
+        # When true, include Preseq c_curve in MultiQC reports (Default: true)
+        c_curve: true
+        # When true, include Qualimap in MultiQC reports (Default: true)
+        qualimap: true
+        # When true, include samtools stats in MultiQC reports (Default: true)
+        samtools_stats: true
 
 
   dynamics:

@@ -925,6 +925,27 @@
                 </label>
                 <label class="lbl" for="cov_species">Per-reference MultiQC report (all individuals)</label>
               </div>
+              <div class="toggle-wrap" style="margin-top:10px;border-top:1px solid #e0e0e0;padding-top:10px">
+                <label class="toggle">
+                  <input type="checkbox" id="cov_c_curve" checked onchange="render()">
+                  <span class="slider"></span>
+                </label>
+                <label class="lbl" for="cov_c_curve">Include Preseq c_curve in MultiQC reports</label>
+              </div>
+              <div class="toggle-wrap" style="margin-top:6px">
+                <label class="toggle">
+                  <input type="checkbox" id="cov_qualimap" checked onchange="render()">
+                  <span class="slider"></span>
+                </label>
+                <label class="lbl" for="cov_qualimap">Include Qualimap in MultiQC reports</label>
+              </div>
+              <div class="toggle-wrap" style="margin-top:6px">
+                <label class="toggle">
+                  <input type="checkbox" id="cov_samtools_stats" checked onchange="render()">
+                  <span class="slider"></span>
+                </label>
+                <label class="lbl" for="cov_samtools_stats">Include samtools stats in MultiQC reports</label>
+              </div>
             </div>
           </div>
 
@@ -1218,10 +1239,10 @@ function buildYAML() {
   p(4, 'analysis:');
   kv(6, 'execute', gb('qcr_exec'));
   p(6, 'settings:');
-  kv(8, 'quality_checking_raw', gb('qcr_raw'));
-  kv(8, 'quality_checking_trimmed', gb('qct_exec'));
-  kv(8, 'quality_checking_quality_filtered', gb('qcqf_exec'));
-  kv(8, 'quality_checking_merged', gb('qcm_exec'));
+  kv(8, 'multiqc_raw_reads', gb('qcr_raw'));
+  kv(8, 'multiqc_trimmed_reads', gb('qct_exec'));
+  kv(8, 'multiqc_quality_filtered_reads', gb('qcqf_exec'));
+  kv(8, 'multiqc_merged_reads', gb('qcm_exec'));
   kv(8, 'create_plots', gb('rrp_create_plots'));
   p(0, '');
   p(4, 'adapter_removal:');
@@ -1294,6 +1315,9 @@ function buildYAML() {
   kv(8, 'create_plots', gb('rp_create_plots'));
   kv(8, 'individual_multiqc', gb('cov_individual'));
   kv(8, 'species_multiqc', gb('cov_species'));
+  kv(8, 'c_curve', gb('cov_c_curve'));
+  kv(8, 'qualimap', gb('cov_qualimap'));
+  kv(8, 'samtools_stats', gb('cov_samtools_stats'));
   p(0, ''); p(0, '');
   p(2, 'dynamics:');
   kv(4, 'execute', gb('dyn_exec'));
@@ -1457,10 +1481,10 @@ function populateForm(c) {
   toggleStage('rrp_body', document.getElementById('rrp_exec'));
   const rrpa = rrp.analysis || {}; const rrpas = rrpa.settings || {};
   sb('qcr_exec',  rrpa.execute);                                                dot('qcr_exec','d_qcr');
-  sb('qcr_raw',   rrpas.quality_checking_raw);
-  sb('qct_exec',  rrpas.quality_checking_trimmed);
-  sb('qcqf_exec', rrpas.quality_checking_quality_filtered);
-  sb('qcm_exec',         rrpas.quality_checking_merged);
+  sb('qcr_raw',   rrpas.multiqc_raw_reads);
+  sb('qct_exec',  rrpas.multiqc_trimmed_reads);
+  sb('qcqf_exec', rrpas.multiqc_quality_filtered_reads);
+  sb('qcm_exec',         rrpas.multiqc_merged_reads);
   sb('rrp_create_plots', rrpas.create_plots);
   const ar = rrp.adapter_removal || {};
   const ars = ar.settings || {};
@@ -1517,8 +1541,11 @@ function populateForm(c) {
   sb('da_exec',        rpas.damage_analysis);
   sb('rp_create_plots',rpas.create_plots);
   sb('cov_exec',      (rp.analysis||{}).execute);                  dot('cov_exec','d_cov');
-  sb('cov_individual', rpas.individual_multiqc);
-  sb('cov_species',    rpas.species_multiqc);
+  sb('cov_individual',    rpas.individual_multiqc);
+  sb('cov_species',       rpas.species_multiqc);
+  sb('cov_c_curve',       rpas.c_curve);
+  sb('cov_qualimap',      rpas.qualimap);
+  sb('cov_samtools_stats',rpas.samtools_stats);
 
   sb('dyn_exec', dyn.execute);
   toggleStage('dyn_body', document.getElementById('dyn_exec'));
@@ -1561,7 +1588,7 @@ function resetDefaults() {
       global: { skip_existing_files: true },
       raw_reads_processing: {
         execute: true,
-        analysis: { execute: true, settings: { quality_checking_raw: true, quality_checking_trimmed: true, quality_checking_quality_filtered: true, quality_checking_merged: true, create_plots: true } },
+        analysis: { execute: true, settings: { multiqc_raw_reads: true, multiqc_trimmed_reads: true, multiqc_quality_filtered_reads: true, multiqc_merged_reads: true, create_plots: true } },
         adapter_removal: { execute: true, settings: { min_quality: 0, min_length: 0 } },
         quality_filtering: { execute: true, settings: { min_quality: 15, min_length: 30 } },
         contamination_analysis: {
@@ -1578,7 +1605,7 @@ function resetDefaults() {
         deduplication: { execute: false, settings: { min_contigs_per_cluster: 10, max_contigs_per_cluster: 500 } },
         damage_rescaling: { execute: true },
         filter_unmapped_reads: { execute: false, settings: { action: 'keep' } },
-        analysis: { execute: true, settings: { damage_analysis: true, create_plots: true, individual_multiqc: true, species_multiqc: true } }
+        analysis: { execute: true, settings: { damage_analysis: true, create_plots: true, individual_multiqc: true, species_multiqc: true, c_curve: true, qualimap: true, samtools_stats: true } }
       },
       dynamics: {
         execute: true,

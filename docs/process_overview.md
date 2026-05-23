@@ -159,7 +159,7 @@ Each major processing step can be independently enabled or disabled. The key tog
 
 - **`pipeline.raw_reads_processing.adapter_removal.execute`** — enable adapter removal (default `true`)
 - **`pipeline.raw_reads_processing.quality_filtering.execute`** — enable quality filtering (default `true`)
-- **`pipeline.raw_reads_processing.quality_checking_merged.execute`** — enable FastQC on merged reads (default `true`)
+- **`pipeline.raw_reads_processing.multiqc_merged_reads`** — enable FastQC on merged reads (default `true`)
 - **`pipeline.raw_reads_processing.contamination_analysis.execute`** — enable contamination analysis (default `true`)
 - **`pipeline.reference_processing.execute`** — enable the entire reference processing module (default `true`)
 - **`pipeline.reference_processing.mapping.settings.mapper`** — mapper to use: `bwa-mem2` (default), `bwa-aln`, `minimap2`
