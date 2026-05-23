@@ -17,6 +17,15 @@ import json
 # import version from workflow/scripts/version.py
 from scripts.version import __version__
 
+from scripts.file_manager import (
+    get_reference_file_list_for_species,
+    get_individuals_for_species,
+    get_samples_for_species_individual,
+    get_feature_library_file_list_for_species,
+    get_scg_library_file_list_for_species,
+    get_raw_reads_for_sample
+)
+
 # Import Snakemake plugin settings for executor modes
 from snakemake_interface_executor_plugins.settings import ExecMode
 
@@ -149,10 +158,61 @@ if workflow.exec_mode != ExecMode.SUBPROCESS:
     logging.info("Loaded configuration:\n%s", config_str)
 
     species_section = config.get("species", {})
-    species_list = [
-        f"{sdata.get('name', sname)} [{sname}]" for sname, sdata in species_section.items()
-    ]
-    logging.info("Detected species:\n- %s", "\n- ".join(species_list))
+    species_lines = []
+    for sname, sdata in species_section.items():
+        display_name = f"{sdata.get('name', sname)} [{sname}]"
+        lines = [f"- {display_name}"]
+
+        try:
+            refs = get_reference_file_list_for_species(sname)
+            lines.append("    References:")
+            for ref_id, ref_path in refs:
+                lines.append(f"      - {ref_id}: {ref_path}")
+        except Exception:
+            lines.append("    References: (none found)")
+
+        try:
+            individuals = get_individuals_for_species(sname)
+            lines.append("    Individuals:")
+            for ind in individuals:
+                lines.append(f"      - {ind}")
+                try:
+                    samples = get_samples_for_species_individual(sname, ind)
+                    lines.append(f"        Samples:")
+                    for s in samples:
+                        lines.append(f"          - {s}")
+                        try:
+                            reads = get_raw_reads_for_sample(sname, s)
+                            lines.append(f"            Reads:")
+                            for r in reads:
+                                lines.append(f"              {r}")
+                        except Exception:
+                            lines.append(f"            Reads: (reads not found)")
+
+                except Exception:
+                    lines.append(f"        Samples: (samples not found)")
+        except Exception:
+            lines.append("    Individuals: (none found)")
+
+        try:
+            feat_libs = get_feature_library_file_list_for_species(sname)
+            lines.append("    Feature Libraries:")
+            for lib_id, lib_path in feat_libs:
+                lines.append(f"      - {lib_id}: {lib_path}")
+        except Exception:
+            lines.append("    Feature Libraries: (none found)")
+
+        try:
+            scg_libs = get_scg_library_file_list_for_species(sname)
+            lines.append("    SCG Libraries:")
+            for lib_id, lib_path in scg_libs:
+                lines.append(f"      - {lib_id}: {lib_path}")
+        except Exception:
+            lines.append("    SCG Libraries: (none found)")
+
+        species_lines.append("\n".join(lines))
+
+    logging.info("Detected species:\n%s", "\n\n".join(species_lines))
 
 # =================================================================================================
 # End of initialize.smk

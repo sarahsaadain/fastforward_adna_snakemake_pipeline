@@ -9,7 +9,7 @@ from venv import logger
 def get_files_in_folder_matching_pattern(folder: str, pattern: str) -> list:
     # Check if the folder exists
     if not os.path.exists(folder):
-        logger.error(f"Invalid folder: {folder}")
+        logger.warning(f"Invalid folder: {folder}")
         raise Exception(f"Invalid folder: {folder}")
     # Read all files matching the pattern into a list
     files = glob.glob(os.path.join(folder, pattern))
@@ -30,7 +30,7 @@ def get_read_files_for_species(species: str) -> list[str]:
         read_files = get_files_in_folder_matching_pattern(species, "*.fastq.gz")
         
     if len(read_files) == 0:
-        logger.error(f"No read files found for species {species}.")
+        logger.warning(f"No read files found for species {species}.")
         raise Exception(f"No read files found for species {species}.")
     
     logger.debug(f"Read files for species {species}: {read_files}")
@@ -51,7 +51,7 @@ def get_r1_read_files_for_species(species: str) -> list[str]:
     r1_files = [f for f in files if "_R1" in os.path.basename(f)]
 
     if len(r1_files) == 0:
-        logger.error(f"No R1 read files found for species {species}. Available read files for species {species}: {files}")
+        logger.warning(f"No R1 read files found for species {species}. Available read files for species {species}: {files}")
         raise Exception(f"No R1 read files found for species {species}.")
     
     logger.debug(f"R1 read files for species {species}: {r1_files}")
@@ -71,7 +71,7 @@ def get_sample_ids_for_species(species):
     logger.debug(f"Sample IDs for species {species}: {samples}")
 
     if len(samples) == 0:
-        logger.error(f"No sample IDs found for species {species}.")
+        logger.warning(f"No sample IDs found for species {species}.")
         raise Exception(f"No sample IDs found for species {species}.")
     
     return samples
@@ -91,7 +91,7 @@ def get_raw_reads_for_sample(species, sample):
                      if re.match(base_r1 + r"(\S*)?\.fastq\.gz", f)]
     
     if not candidates_r1:
-        logger.error(f"No R1 found for {sample}. Expected pattern: {base_r1}*.fastq.gz in {reads_dir}. Found files: {read_files}")
+        logger.warning(f"No R1 found for {sample}. Expected pattern: {base_r1}*.fastq.gz in {reads_dir}. Found files: {read_files}")
         raise FileNotFoundError(f"No R1 found for {sample}. Expected pattern: {base_r1}*.fastq.gz in {reads_dir}. Found files: {read_files}")
 
     r1 = os.path.join(reads_dir, sorted(candidates_r1)[0])
@@ -113,7 +113,7 @@ def get_individuals_for_species(species):
 
     samples = get_sample_ids_for_species(species)
     if len(samples) == 0:
-        logger.error(f"No samples found for species {species}.")
+        logger.warning(f"No samples found for species {species}.")
         raise Exception(f"No samples found for species {species}.")
     individuals = set()
     for s in samples:
@@ -195,7 +195,7 @@ def get_samples_for_species_individual(species, individual):
     logger.debug(f"Samples for individual {individual} in species {species}: {samples_of_individual}")
 
     if len(samples_of_individual) == 0:
-        logger.error(f"No samples found for individual {individual} in species {species}. Available samples: {samples}")
+        logger.warning(f"No samples found for individual {individual} in species {species}. Available samples: {samples}")
         raise Exception(f"No samples found for individual {individual} in species {species}.")
     
     return samples_of_individual
@@ -304,5 +304,5 @@ def get_scg_library_file_for_species_and_library(species, library_id):
     for lib in libraries:
         if lib[0] == library_id:
             return lib[1]
-    logger.error(f"SCG library with ID {library_id} not found for species {species}. Available libraries: {libraries}")
+    logger.warning(f"SCG library with ID {library_id} not found for species {species}. Available libraries: {libraries}")
     raise Exception(f"SCG library with ID {library_id} not found for species {species}.")
