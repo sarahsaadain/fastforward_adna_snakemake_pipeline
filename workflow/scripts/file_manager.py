@@ -30,8 +30,8 @@ def get_read_files_for_species(species: str) -> list[str]:
         read_files = get_files_in_folder_matching_pattern(species, "*.fastq.gz")
         
     if len(read_files) == 0:
-        logger.warning(f"No read files found for species {species}.")
-        raise Exception(f"No read files found for species {species}.")
+        logger.warning(f"No read files found for species {species}. Make sure the files are named with the pattern <Individual>*R[1,2]*.fastq.gz and are located in either {read_folder} or {species}.")
+        raise Exception(f"No read files found for species {species}. Make sure the files are named with the pattern <Individual>*R[1,2]*.fastq.gz and are located in either {read_folder} or {species}.")
     
     logger.debug(f"Read files for species {species}: {read_files}")
         
@@ -51,8 +51,9 @@ def get_r1_read_files_for_species(species: str) -> list[str]:
     r1_files = [f for f in files if "_R1" in os.path.basename(f)]
 
     if len(r1_files) == 0:
-        logger.warning(f"No R1 read files found for species {species}. Available read files for species {species}: {files}")
-        raise Exception(f"No R1 read files found for species {species}.")
+        logger.warning(f"No R1 read files found for species {species}. Make sure the files are named with the pattern <Individual>*R[1,2]*.fastq.gz.")
+        logger.warning(f"Available read files for species {species}: {files}")
+        raise Exception(f"No R1 read files found for species {species}. Make sure the files are named with the pattern <Individual>*R[1,2]*.fastq.gz.")
     
     logger.debug(f"R1 read files for species {species}: {r1_files}")
     
