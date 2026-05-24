@@ -246,6 +246,18 @@ Consolidates all QC outputs into MultiQC HTML reports.
 | `settings.individual_multiqc` | on | Generate a per-individual MultiQC summary report (all references, one individual). |
 | `settings.species_multiqc` | on | Generate a per-species MultiQC summary report (all individuals, all references). |
 
+### Minimum Config
+
+Only `project_name` and at least one entry under `species` are required. All pipeline stages run with their defaults.
+
+```yaml
+project_name: "pastForward_Project"
+
+species:
+  Dmel:
+    name: "Drosophila melanogaster"
+```
+
 ### Example `config.yaml`
 
 ```yaml
