@@ -227,6 +227,15 @@ TE and genomic feature abundance analysis — maps to a combined SCG + feature l
 | `seqvista` | on | Generates SO profiles — per-position coverage, SNP, and indel information — normalised into a SeqVista directory structure for per-individual TE occupancy plots and a faceted species-level comparison plot. |
 | `seqvista.settings.individual_plots` | `plot` | `plot` — generate plotables and render per-individual plots; `plotable_only` — generate plotables only, skip rendering; `skip` — skip both. |
 | `seqvista.settings.comparison_plots` | `plot` | `plot` — generate plotables and render the faceted species comparison plot; `plotable_only` — generate plotables only, skip rendering; `skip` — skip both. |
+| `seqvista.settings.y_axis_log_scale_threshold_individual` | `25` | Y-axis value above which per-individual plots switch to a log scale. |
+| `seqvista.settings.y_axis_log_scale_threshold_species` | `25` | Y-axis value above which the species comparison plot switches to a log scale. |
+| `seqvista.settings.mapping_quality_threshold` | `5` | Mapping quality threshold for bam2so; reads below this value are treated as ambiguously mapped and excluded. |
+| `seqvista.settings.minimum_count_snp` | `5` | Minimum number of reads supporting a variant for it to be called as a SNP. |
+| `seqvista.settings.minimum_frequency_snp` | `0.1` | Minimum allele frequency (0–1) for a SNP call. |
+| `seqvista.settings.minimum_count_indel` | `3` | Minimum number of reads supporting an indel for it to be reported. |
+| `seqvista.settings.minimum_frequency_indel` | `0.01` | Minimum allele frequency (0–1) for an indel call. |
+| `seqvista.settings.end_distance` | `100` | Number of positions from each end of a sequence excluded when computing the normalisation factor, to avoid edge-coverage artefacts. |
+| `seqvista.settings.exclude_quantile` | `25` | Percentile used to exclude the most extreme coverage values from normalisation (excludes both the top and bottom tail). |
 
 ### Stage: `summary_processing`
 
@@ -366,6 +375,15 @@ pipeline:
       settings:
         individual_plots: "plot"
         comparison_plots: "plot"
+        y_axis_log_scale_threshold_individual: 25
+        y_axis_log_scale_threshold_species: 25
+        mapping_quality_threshold: 5
+        minimum_count_snp: 5
+        minimum_frequency_snp: 0.1
+        minimum_count_indel: 3
+        minimum_frequency_indel: 0.01
+        end_distance: 100
+        exclude_quantile: 25
 
   summary_processing:
     execute: true

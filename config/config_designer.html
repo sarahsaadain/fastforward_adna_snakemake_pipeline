@@ -1036,6 +1036,7 @@
               <div class="when-hint"><span class="def-pill on">Default: ON</span>Turn off if you only need normalised abundance counts and do not require per-position TE occupancy profiles. SeqVista is more computationally intensive than PF Normalization alone.</div>
             </div>
             <div class="subsection-body open">
+              <p style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin:0 0 8px">Plot settings</p>
               <div class="field">
                 <label>Individual plots</label>
                 <select id="sv_individual_plots" onchange="render()">
@@ -1051,6 +1052,55 @@
                   <option value="plotable_only">plotable_only &mdash; generate plotables, skip rendering</option>
                   <option value="skip">skip &mdash; skip plotables and facet plot</option>
                 </select>
+              </div>
+              <div class="field">
+                <label>Y-axis log scale threshold &mdash; individual</label>
+                <input type="number" id="sv_log_thresh_ind" value="25" min="1" oninput="render()">
+                <span style="font-size:.68rem;color:var(--text-muted);margin-top:3px;display:block">Y-axis value above which individual plots switch to log scale (Default: 25)</span>
+              </div>
+              <div class="field">
+                <label>Y-axis log scale threshold &mdash; species</label>
+                <input type="number" id="sv_log_thresh_sp" value="25" min="1" oninput="render()">
+                <span style="font-size:.68rem;color:var(--text-muted);margin-top:3px;display:block">Y-axis value above which the species comparison plot switches to log scale (Default: 25)</span>
+              </div>
+
+              <p style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin:14px 0 8px;border-top:1px solid var(--border);padding-top:12px">Coverage analysis (bam2so)</p>
+              <div class="field">
+                <label>Mapping quality threshold</label>
+                <input type="number" id="sv_mapqth" value="5" min="0" oninput="render()">
+                <span style="font-size:.68rem;color:var(--text-muted);margin-top:3px;display:block">Reads below this mapping quality are treated as ambiguous and excluded (Default: 5)</span>
+              </div>
+              <div class="field">
+                <label>Minimum count &mdash; SNP</label>
+                <input type="number" id="sv_mc_snp" value="5" min="1" oninput="render()">
+                <span style="font-size:.68rem;color:var(--text-muted);margin-top:3px;display:block">Minimum number of supporting reads to call a SNP (Default: 5)</span>
+              </div>
+              <div class="field">
+                <label>Minimum frequency &mdash; SNP</label>
+                <input type="number" id="sv_mf_snp" value="0.1" min="0" max="1" step="0.01" oninput="render()">
+                <span style="font-size:.68rem;color:var(--text-muted);margin-top:3px;display:block">Minimum allele frequency (0–1) for a SNP call (Default: 0.1)</span>
+              </div>
+              <div class="field">
+                <label>Minimum count &mdash; indel</label>
+                <input type="number" id="sv_mc_indel" value="3" min="1" oninput="render()">
+                <span style="font-size:.68rem;color:var(--text-muted);margin-top:3px;display:block">Minimum number of supporting reads to report an indel (Default: 3)</span>
+              </div>
+              <div class="field">
+                <label>Minimum frequency &mdash; indel</label>
+                <input type="number" id="sv_mf_indel" value="0.01" min="0" max="1" step="0.001" oninput="render()">
+                <span style="font-size:.68rem;color:var(--text-muted);margin-top:3px;display:block">Minimum allele frequency (0–1) for an indel call (Default: 0.01)</span>
+              </div>
+
+              <p style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin:14px 0 8px;border-top:1px solid var(--border);padding-top:12px">Normalisation (normalize-so)</p>
+              <div class="field">
+                <label>End distance</label>
+                <input type="number" id="sv_end_dist" value="100" min="0" oninput="render()">
+                <span style="font-size:.68rem;color:var(--text-muted);margin-top:3px;display:block">Positions from each sequence end excluded when computing the normalisation factor (Default: 100)</span>
+              </div>
+              <div class="field">
+                <label>Exclude quantile</label>
+                <input type="number" id="sv_excl_quant" value="25" min="0" max="49" oninput="render()">
+                <span style="font-size:.68rem;color:var(--text-muted);margin-top:3px;display:block">Percentile used to exclude extreme coverage values from normalisation (Default: 25)</span>
               </div>
             </div>
           </div>
@@ -1311,6 +1361,15 @@ function buildYAML() {
   p(6, 'settings:');
   kv(8, 'individual_plots', gv('sv_individual_plots'));
   kv(8, 'comparison_plots', gv('sv_comparison_plots'));
+  kv(8, 'y_axis_log_scale_threshold_individual', gn('sv_log_thresh_ind'));
+  kv(8, 'y_axis_log_scale_threshold_species',    gn('sv_log_thresh_sp'));
+  kv(8, 'mapping_quality_threshold', gn('sv_mapqth'));
+  kv(8, 'minimum_count_snp',         gn('sv_mc_snp'));
+  kv(8, 'minimum_frequency_snp',     parseFloat(gv('sv_mf_snp')));
+  kv(8, 'minimum_count_indel',       gn('sv_mc_indel'));
+  kv(8, 'minimum_frequency_indel',   parseFloat(gv('sv_mf_indel')));
+  kv(8, 'end_distance',    gn('sv_end_dist'));
+  kv(8, 'exclude_quantile', gn('sv_excl_quant'));
   p(0, '');
   p(2, 'summary_processing:');
   kv(4, 'execute', gb('sp_exec'));
@@ -1536,6 +1595,15 @@ function populateForm(c) {
   const svs = (dyn.seqvista||{}).settings||{};
   sv('sv_individual_plots', svs.individual_plots || 'plot');
   sv('sv_comparison_plots', svs.comparison_plots || 'plot');
+  sv('sv_log_thresh_ind',  svs.y_axis_log_scale_threshold_individual != null ? svs.y_axis_log_scale_threshold_individual : 25);
+  sv('sv_log_thresh_sp',   svs.y_axis_log_scale_threshold_species    != null ? svs.y_axis_log_scale_threshold_species    : 25);
+  sv('sv_mapqth',          svs.mapping_quality_threshold   != null ? svs.mapping_quality_threshold   : 5);
+  sv('sv_mc_snp',          svs.minimum_count_snp           != null ? svs.minimum_count_snp           : 5);
+  sv('sv_mf_snp',          svs.minimum_frequency_snp       != null ? svs.minimum_frequency_snp       : 0.1);
+  sv('sv_mc_indel',        svs.minimum_count_indel         != null ? svs.minimum_count_indel         : 3);
+  sv('sv_mf_indel',        svs.minimum_frequency_indel     != null ? svs.minimum_frequency_indel     : 0.01);
+  sv('sv_end_dist',        svs.end_distance                != null ? svs.end_distance                : 100);
+  sv('sv_excl_quant',      svs.exclude_quantile            != null ? svs.exclude_quantile            : 25);
   const sps = sp.settings || {};
   sb('sp_exec',       sp.execute);
   sb('sp_individual', sps.individual_multiqc);
@@ -1588,7 +1656,7 @@ function resetDefaults() {
       dynamics: {
         execute: true,
         mapping: { settings: { mapper: 'bwa-aln' } },
-        seqvista: { execute: true, settings: { individual_plots: 'plot', comparison_plots: 'plot' } }
+        seqvista: { execute: true, settings: { individual_plots: 'plot', comparison_plots: 'plot', y_axis_log_scale_threshold_individual: 25, y_axis_log_scale_threshold_species: 25, mapping_quality_threshold: 5, minimum_count_snp: 5, minimum_frequency_snp: 0.1, minimum_count_indel: 3, minimum_frequency_indel: 0.01, end_distance: 100, exclude_quantile: 25 } }
       },
       summary_processing: { execute: true, settings: { individual_multiqc: true, species_multiqc: true } }
     },

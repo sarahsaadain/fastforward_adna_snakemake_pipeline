@@ -198,6 +198,23 @@ pipeline:
         #   "plotable_only" — generate plotables only, skip rendering the comparison plot
         #   "skip"          — skip both plotables and the comparison plot
         comparison_plots: "plot"
+        # Y-axis value above which the plot switches to log scale (individual and species level) (Default: 25)
+        y_axis_log_scale_threshold_individual: 25
+        y_axis_log_scale_threshold_species: 25
+        # bam2so: mapping quality threshold; reads below this are considered ambiguous (Default: 5)
+        mapping_quality_threshold: 5
+        # bam2so: minimum count of SNPs to call a SNP (Default: 5)
+        minimum_count_snp: 5
+        # bam2so: minimum frequency of SNPs to call a SNP (Default: 0.1)
+        minimum_frequency_snp: 0.1
+        # bam2so: minimum count of indels to call an indel (Default: 3)
+        minimum_count_indel: 3
+        # bam2so: minimum frequency of indels to call an indel (Default: 0.01)
+        minimum_frequency_indel: 0.01
+        # normalize-so: distance from sequence ends excluded from normalization (Default: 100)
+        end_distance: 100
+        # normalize-so: exclude the most extreme coverage quantiles for normalization (Default: 25)
+        exclude_quantile: 25
   
   summary_processing:
     # When true, this stage will be executed (Default: true)

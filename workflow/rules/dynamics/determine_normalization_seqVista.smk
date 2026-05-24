@@ -45,30 +45,52 @@ rule determine_seqvista_of_individual_bam_to_so:
         "{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_bam2so.log"
     conda:
         "../../envs/python_and_r.yaml"
+    params:
+        mapqth    = lambda _: config.get("pipeline", {}).get("dynamics", {}).get("seqvista", {}).get("settings", {}).get("mapping_quality_threshold", 5),
+        mc_snp    = lambda _: config.get("pipeline", {}).get("dynamics", {}).get("seqvista", {}).get("settings", {}).get("minimum_count_snp", 5),
+        mf_snp    = lambda _: config.get("pipeline", {}).get("dynamics", {}).get("seqvista", {}).get("settings", {}).get("minimum_frequency_snp", 0.1),
+        mc_indel  = lambda _: config.get("pipeline", {}).get("dynamics", {}).get("seqvista", {}).get("settings", {}).get("minimum_count_indel", 3),
+        mf_indel  = lambda _: config.get("pipeline", {}).get("dynamics", {}).get("seqvista", {}).get("settings", {}).get("minimum_frequency_indel", 0.01)
     message:
         "Determining seqvista coverage for {wildcards.individual} of {wildcards.species} using bam2so."
     shell:
         """
-        python workflow/scripts/dynamics/seqvista/bam2so.py --infile {input.bam} --fasta {input.fasta} --outfile {output.coverage} 2> {log}
+        python workflow/scripts/dynamics/seqvista/bam2so.py \
+            --infile {input.bam} \
+            --fasta {input.fasta} \
+            --outfile {output.coverage} \
+            --mapqth {params.mapqth} \
+            --mc-snp {params.mc_snp} \
+            --mf-snp {params.mf_snp} \
+            --mc-indel {params.mc_indel} \
+            --mf-indel {params.mf_indel} \
+            2> {log}
         """
 
 rule normalize_seqvista_of_individual:
     input:
-        coverage="{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_coverage.tsv"
+        coverage="{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_coverage.tsv.gz"
     output:
         normalized=temp("{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_coverage.normalized.tsv")
     conda:
         "../../envs/python_and_r.yaml"
+    params:
+        end_distance     = lambda _: config.get("pipeline", {}).get("dynamics", {}).get("seqvista", {}).get("settings", {}).get("end_distance", 100),
+        exclude_quantile = lambda _: config.get("pipeline", {}).get("dynamics", {}).get("seqvista", {}).get("settings", {}).get("exclude_quantile", 25)
     message:
         "Normalizing seqvista coverage for {wildcards.individual} of {wildcards.species}."
     shell:
         """
-        python workflow/scripts/dynamics/seqvista/normalize-so.py --so {input.coverage} --outfile {output.normalized}
+        python workflow/scripts/dynamics/seqvista/normalize-so.py \
+            --so {input.coverage} \
+            --outfile {output.normalized} \
+            --end-distance {params.end_distance} \
+            --exclude-quantile {params.exclude_quantile}
         """
 
 rule estimate_seqvista_of_individual:
     input:
-        coverage="{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_coverage.tsv"
+        coverage="{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_coverage.tsv.gz"
     output:
         estimation=temp("{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_estimation.tsv")
     conda:
@@ -82,7 +104,7 @@ rule estimate_seqvista_of_individual:
 
 rule prepare_seqvista_visualization_of_individual:
     input:
-        coverage="{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_coverage.normalized.tsv",
+        coverage="{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_coverage.normalized.tsv.gz",
     output:
         plotable=temp(directory("{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_plotable"))
     conda:
@@ -100,7 +122,7 @@ rule prepare_seqvista_visualization_of_individual:
 
 rule calculate_seqvista_normalized_stats_of_individual:
     input:
-        coverage="{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_coverage.normalized.tsv",
+        coverage="{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_coverage.normalized.tsv.gz",
     output:
         stats="{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_coverage.normalized.stats.tsv"
     conda:
@@ -161,7 +183,7 @@ rule run_seqvista_visualization_of_individual:
         "../../envs/python_and_r.yaml"
     threads: 15
     params:
-        log_threshhold = 25
+        log_threshhold = lambda _: config.get("pipeline", {}).get("dynamics", {}).get("seqvista", {}).get("settings", {}).get("y_axis_log_scale_threshold_individual", 25)
     message:
         "Running seqvista visualization for {wildcards.individual} of {wildcards.species}."
     shell:
@@ -183,7 +205,7 @@ rule run_seqvista_visualization_of_species:
         "../../envs/python_and_r.yaml"
     threads: 15
     params:
-        log_threshhold = 25
+        log_threshhold = lambda _: config.get("pipeline", {}).get("dynamics", {}).get("seqvista", {}).get("settings", {}).get("y_axis_log_scale_threshold_species", 25)
     message:
         "Running seqvista visualization for {wildcards.species}."
     shell:
