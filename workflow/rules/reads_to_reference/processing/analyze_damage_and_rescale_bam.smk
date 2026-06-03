@@ -95,8 +95,8 @@ rule move_rescaled_bam:
         sorted_bam="{species}/results/{reference}/analytics/individual_level/{individual}/mapdamage/{individual}_{reference}_sorted.bam",
         bam_index ="{species}/results/{reference}/analytics/individual_level/{individual}/mapdamage/{individual}_{reference}_sorted.bam.bai"
     output:
-        sorted_bam="{species}/processed/{reference}/mapped/{individual}_{reference}_sorted_dedupped_rescaled.bam",
-        bam_index ="{species}/processed/{reference}/mapped/{individual}_{reference}_sorted_dedupped_rescaled.bam.bai"
+        sorted_bam=temp("{species}/processed/{reference}/mapped/{individual}_{reference}_sorted_dedupped_rescaled.bam"),
+        bam_index =temp("{species}/processed/{reference}/mapped/{individual}_{reference}_sorted_dedupped_rescaled.bam.bai")
     message:
         "Move rescaled BAM and index to processed directory for {input.sorted_bam}",
     shell:
