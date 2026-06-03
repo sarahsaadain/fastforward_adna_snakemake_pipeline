@@ -4,7 +4,7 @@
 _ref_settings      = config.get("pipeline", {}).get("reference_processing", {}).get("mapping", {}).get("settings", {})
 _ref_mapper        = _ref_settings.get("mapper", "bwa-mem2")
 _BWA_ALN_DEFAULTS  = "-n 0.01 -k 2 -l 1024 -o 2"  # Oliva et al. 2021 (10.1093/bib/bbab076)
-_MINIMAP2_DEFAULTS = "-ax sr"
+_MINIMAP2_DEFAULTS = "-ax sr --split-prefix"
 _ref_mapper_extra  = _ref_settings.get(
     "mapper_extra_params",
     _BWA_ALN_DEFAULTS if _ref_mapper == "bwa-aln" else

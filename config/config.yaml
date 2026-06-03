@@ -117,7 +117,7 @@ pipeline:
         mapper: "bwa-mem2"
         # Optional: extra parameters passed directly to the mapper
         # For bwa-aln, defaults to "-n 0.01 -k 2 -l 1024 -o 2" (Oliva et al. 2021, 10.1093/bib/bbab076)
-        # For minimap2, defaults to "-ax sr"
+        # For minimap2, defaults to "-ax sr --split-prefix"
         #mapper_extra_params: ""
 
     # Deduplication settings
@@ -177,10 +177,11 @@ pipeline:
         # Options: "bwa-mem2" (default), "bwa-aln" or "minimap2"
         # bwa-aln: classic seed-and-extend, well-suited for short aDNA reads
         # bwa-mem2: faster modern reimplementation of bwa-mem
-        # minimap2: fast versatile aligner, uses preset "-ax sr" for short reads
+        # minimap2: fast versatile aligner
         mapper: "bwa-mem2"
         # Optional: extra parameters passed directly to the mapper
         # For bwa-aln, defaults to "-n 0.01 -k 2 -l 1024 -o 2" (Oliva et al. 2021, 10.1093/bib/bbab076)
+        # For minimap2, defaults to "-ax sr --split-prefix"
         #mapper_extra_params: ""
     seqvista:
       # When true, this sub-stage will be executed (Default: true)
