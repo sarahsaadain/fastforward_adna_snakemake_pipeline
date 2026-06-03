@@ -165,7 +165,7 @@ if workflow.exec_mode != ExecMode.SUBPROCESS:
 
         try:
             refs = get_reference_file_list_for_species(sname)
-            lines.append("    References:")
+            lines.append(f"    References ({len(refs)}):")
             for ref_id, ref_path in refs:
                 lines.append(f"      - {ref_id}: {ref_path}")
         except Exception:
@@ -173,17 +173,17 @@ if workflow.exec_mode != ExecMode.SUBPROCESS:
 
         try:
             individuals = get_individuals_for_species(sname)
-            lines.append("    Individuals:")
+            lines.append(f"    Individuals ({len(individuals)}):")
             for ind in individuals:
                 lines.append(f"      - {ind}")
                 try:
                     samples = get_samples_for_species_individual(sname, ind)
-                    lines.append(f"        Samples:")
+                    lines.append(f"        Samples ({len(samples)}):")
                     for s in samples:
                         lines.append(f"          - {s}")
                         try:
                             reads = get_raw_reads_for_sample(sname, s)
-                            lines.append(f"            Reads:")
+                            lines.append(f"            Reads ({len(reads)}):")
                             for r in reads:
                                 lines.append(f"              {r}")
                         except Exception:
@@ -196,7 +196,7 @@ if workflow.exec_mode != ExecMode.SUBPROCESS:
 
         try:
             feat_libs = get_feature_library_file_list_for_species(sname)
-            lines.append("    Feature Libraries:")
+            lines.append(f"    Feature Libraries ({len(feat_libs)}):")
             for lib_id, lib_path in feat_libs:
                 lines.append(f"      - {lib_id}: {lib_path}")
         except Exception:
@@ -204,7 +204,7 @@ if workflow.exec_mode != ExecMode.SUBPROCESS:
 
         try:
             scg_libs = get_scg_library_file_list_for_species(sname)
-            lines.append("    SCG Libraries:")
+            lines.append(f"    SCG Libraries ({len(scg_libs)}):")
             for lib_id, lib_path in scg_libs:
                 lines.append(f"      - {lib_id}: {lib_path}")
         except Exception:
@@ -212,7 +212,7 @@ if workflow.exec_mode != ExecMode.SUBPROCESS:
 
         species_lines.append("\n".join(lines))
 
-    logging.info("Detected species:\n%s", "\n\n".join(species_lines))
+    logging.info("Detected species (%d):\n%s", len(species_section), "\n\n".join(species_lines))
 
 # =================================================================================================
 # End of initialize.smk
