@@ -1,27 +1,33 @@
 ####################################################
 # Python helper functions for rules
-# Naming of functions: <rule_name>_<rule_parameter>[_<rule_subparameter>]>
 ####################################################
 
 def clean_scg_library_name_input(wildcards):
     """
-    Return the full path to the FASTA file corresponding to this sample
-    from the config.
+    Return the FASTA path for the SCG library: user-provided if available,
+    otherwise the auto-determined path produced by the SCG selector.
     """
     species = wildcards.species
     scg_library = wildcards.scg_library
 
-    scg_library_path = get_scg_library_file_for_species_and_library(species, scg_library)
+    # Try user-provided SCG library first
+    try:
+        scg_library_path = get_scg_library_file_for_species_and_library(species, scg_library)
+        return scg_library_path
+    except Exception:
+        pass
 
-    if not scg_library_path:
-        raise ValueError(f"No SCG library file could be determined for species {species} and library {scg_library}.")
+    # Fall back to auto-determined SCG output
+    auto_id = get_effective_scg_library_id_for_species(species)
+    if scg_library == auto_id:
+        return f"{species}/processed/dynamics/scg/{species}_relevant_scg.fasta"
 
-    return scg_library_path
+    raise ValueError(f"No SCG library file could be determined for species {species} and library {scg_library}.")
+
 
 def clean_feature_library_name_input(wildcards):
     """
-    Return the full path to the FASTA file corresponding to this sample
-    from the config.
+    Return the full path to the FASTA file for this feature library.
     """
     species = wildcards.species
     feature_library = wildcards.feature_library
@@ -36,6 +42,7 @@ def clean_feature_library_name_input(wildcards):
 ####################################################
 # Snakemake rules
 ####################################################
+
 rule clean_feature_library_name:
     input:
         clean_feature_library_name_input
@@ -81,10 +88,10 @@ rule prepare_scg_library:
         """
         sed -E '/^>/ s/[[:space:]]//g; /^>/ s/(_scg)?$/_scg/' {input} > {output}
         """
-        
+
 rule combine_scg_and_ref_library:
     input:
-        scg= lambda wildcards: f"{wildcards.species}/processed/dynamics/lib/scg/{get_scg_library_ids_for_species(wildcards.species)[0]}.suffixed.fasta",
+        scg=lambda wildcards: f"{wildcards.species}/processed/dynamics/lib/scg/{get_effective_scg_library_id_for_species(wildcards.species)}.suffixed.fasta",
         fl="{species}/processed/dynamics/lib/feature_library/{feature_library}.suffixed.fasta"
     output:
         library="{species}/processed/dynamics/lib/{feature_library}_and_scg.suffixed.fasta"

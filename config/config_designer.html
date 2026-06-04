@@ -278,7 +278,10 @@
     .execute-banner label.lbl { font-size: .87rem; font-weight: 600; }
 
     /* ── Species ── */
-    .species-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .species-row { display: block; margin-bottom: 10px; }
+    .sp-main { display: flex; gap: 8px; align-items: center; }
+    .sp-scg { display: flex; gap: 6px; align-items: center; margin-top: 6px; padding-left: 2px; flex-wrap: wrap; }
+    .sp-scg .sp-scg-label { font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); white-space: nowrap; flex-shrink: 0; }
     .species-row input {
       flex: 1; padding: 7px 10px; border: 1px solid var(--border);
       border-radius: 6px; font-size: .82rem; background: var(--bg); font-family: inherit;
@@ -362,16 +365,18 @@
         <span class="chevron">&#9654;</span>
       </div>
       <div class="section-body open">
-        <div style="display:grid;grid-template-columns:90px 1fr 28px;gap:6px;margin-bottom:6px;padding:0 2px">
-          <span style="font-size:.65rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em">Key</span>
-          <span style="font-size:.65rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em">Display Name</span>
-          <span></span>
+        <div style="display:flex;gap:8px;margin-bottom:6px;padding:0 2px;align-items:center">
+          <span style="font-size:.65rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;width:90px;flex-shrink:0">Key</span>
+          <span style="font-size:.65rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;flex:1">Display Name</span>
+          <span style="width:28px;flex-shrink:0"></span>
         </div>
         <div id="species-list"></div>
         <button class="btn-add-species" onclick="addSpecies()">+ Add Species</button>
         <p class="hint" style="margin-top:8px">
           <strong>Key</strong> = folder name and YAML map key (alphanumeric / underscore, no spaces). Must match the directory under the pipeline root.<br>
-          <strong>Display Name</strong> = human-readable species name used in reports (e.g. <em>Drosophila melanogaster</em>).
+          <strong>Display Name</strong> = human-readable species name used in reports.<br>
+          <strong>BUSCO Lineage</strong> = required for SCG auto-determination (e.g. <code>drosophilidae_odb12</code>). Leave blank to skip SCG determination for this species. Browse lineages at <a href="https://busco.ezlab.org/" target="_blank">busco.ezlab.org</a>.<br>
+          <strong>Reference</strong> = optional explicit path to the reference FASTA for BUSCO. Only needed when multiple references exist in <code>{species}/raw/ref/</code>.
         </p>
       </div>
     </div>
@@ -976,6 +981,65 @@
 
         <div id="dyn_body">
 
+          <!-- SCG Selector -->
+          <div class="subsection">
+            <div class="subsection-header clickable" onclick="toggleSub(this)">
+              <span class="sdot on" id="d_scg"></span>
+              <span class="subsection-title">SCG Selector</span>
+              <label class="toggle" onclick="event.stopPropagation()">
+                <input type="checkbox" id="scg_exec" checked onchange="dot('scg_exec','d_scg'); render()">
+                <span class="slider"></span>
+              </label>
+              <span class="sub-chevron">&#9654;</span>
+            </div>
+            <div class="step-desc">
+              <span class="tool-pill green">BUSCO</span>
+              Automatically identifies <strong>single-copy genes (SCGs)</strong> from the reference genome via BUSCO when no user-provided SCG FASTA is placed in <code>{species}/raw/dynamics/scg/</code>. SCGs act as coverage normalisers for the Dynamics pipeline. Skipped automatically when a user-provided file is found <em>or</em> when no BUSCO lineage is configured for the species (set per species in the Species section above).
+              <div class="when-hint"><span class="def-pill on">Default: ON</span>Can also be used standalone (without any feature library) to produce an SCG ranking table as the sole output. Set the <strong>BUSCO Lineage</strong> per species in the Species section; if exactly one reference exists in <code>{species}/raw/ref/</code> it is auto-detected, otherwise specify it explicitly.</div>
+            </div>
+            <div class="subsection-body open">
+              <div class="field">
+                <label>Mapper</label>
+                <select id="scg_mapper" onchange="mapperInfo('scg_mapper','scg_minfo'); render()">
+                  <option value="" selected>inherit from Dynamics mapper</option>
+                  <option value="bwa-aln">bwa-aln</option>
+                  <option value="bwa-mem2">bwa-mem2</option>
+                  <option value="minimap2">minimap2</option>
+                </select>
+                <div class="mapper-info" id="scg_minfo">Uses the same mapper as the Dynamics feature-library mapping by default.</div>
+              </div>
+              <div class="opt-group">
+                <div class="opt-header" id="scg_xp_hdr">
+                  <input type="checkbox" id="scg_xp_en" onchange="optToggle('scg_xp_en','scg_xp_body','scg_xp_hdr'); render()">
+                  <label for="scg_xp_en">Extra mapper parameters</label>
+                  <span class="opt-tag">optional</span>
+                </div>
+                <div class="opt-body" id="scg_xp_body">
+                  <div class="field" style="margin-top:8px">
+                    <label>Extra Params</label>
+                    <input type="text" id="scg_xp" value="" placeholder="-n 0.01 -k 2 -l 1024 -o 2" oninput="render()">
+                  </div>
+                </div>
+              </div>
+              <p style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin:14px 0 8px;border-top:1px solid var(--border);padding-top:12px">SCG selection parameters</p>
+              <div class="field">
+                <label>Number of top SCGs</label>
+                <input type="number" id="scg_num_top" value="20" min="1" oninput="render()">
+                <span style="font-size:.68rem;color:var(--text-muted);margin-top:3px;display:block">Number of highest-ranked SCGs retained as coverage normalisers (Default: 20; overridable per species)</span>
+              </div>
+              <div class="field">
+                <label>Min SCG length (bp)</label>
+                <input type="number" id="scg_min_len" value="4000" min="1" oninput="render()">
+                <span style="font-size:.68rem;color:var(--text-muted);margin-top:3px;display:block">Minimum sequence length for a BUSCO SCG to be included (Default: 4000; overridable per species)</span>
+              </div>
+              <div class="field">
+                <label>Max SCG length (bp)</label>
+                <input type="number" id="scg_max_len" value="8000" min="1" oninput="render()">
+                <span style="font-size:.68rem;color:var(--text-muted);margin-top:3px;display:block">Maximum sequence length for a BUSCO SCG to be included (Default: 8000; overridable per species)</span>
+              </div>
+            </div>
+          </div>
+
           <!-- Mapping -->
           <div class="subsection">
             <div class="subsection-header clickable" onclick="toggleSub(this)">
@@ -1219,15 +1283,23 @@ function mapperInfo(selId, infoId) {
 /* ─── Species rows ─── */
 let speciesSeq = 0;
 
-function addSpecies(key='', name='') {
+function addSpecies(key='', name='', lineage='', ref='') {
   const id = speciesSeq++;
   const row = document.createElement('div');
   row.className = 'species-row';
   row.dataset.id = id;
   row.innerHTML = `
-    <input type="text" class="sp-key"  placeholder="e.g. Dmel"      value="${esc(key)}"  oninput="render()" style="max-width:90px">
-    <input type="text" class="sp-name" placeholder="e.g. Dmel Demo" value="${esc(name)}" oninput="render()">
-    <button class="btn-rm" onclick="this.parentElement.remove(); render()" title="Remove">&#215;</button>
+    <div class="sp-main">
+      <input type="text" class="sp-key"  placeholder="e.g. Dmel"      value="${esc(key)}"  oninput="render()" style="max-width:90px">
+      <input type="text" class="sp-name" placeholder="e.g. Dmel Demo" value="${esc(name)}" oninput="render()">
+      <button class="btn-rm" onclick="this.closest('.species-row').remove(); render()" title="Remove">&#215;</button>
+    </div>
+    <div class="sp-scg">
+      <span class="sp-scg-label">BUSCO Lineage</span>
+      <input type="text" class="sp-lineage" placeholder="e.g. drosophilidae_odb12" value="${esc(lineage)}" oninput="render()" style="flex:1;min-width:160px">
+      <span class="sp-scg-label" style="margin-left:8px">Reference</span>
+      <input type="text" class="sp-ref" placeholder="optional: /path/to/ref.fasta" value="${esc(ref)}" oninput="render()" style="flex:2;min-width:160px">
+    </div>
   `;
   document.getElementById('species-list').appendChild(row);
   render();
@@ -1352,6 +1424,15 @@ function buildYAML() {
   p(0, ''); p(0, '');
   p(2, 'dynamics:');
   kv(4, 'execute', gb('dyn_exec'));
+  p(4, 'scg_selector:');
+  kv(6, 'execute', gb('scg_exec'));
+  p(6, 'settings:');
+  const scgMapper = gv('scg_mapper');
+  if (scgMapper) kv(8, 'mapper', scgMapper);
+  if (gb('scg_xp_en') && gv('scg_xp').trim()) kv(8, 'mapper_extra_params', gv('scg_xp'));
+  kv(8, 'num_top_scgs', gn('scg_num_top'));
+  kv(8, 'min_length_scg', gn('scg_min_len'));
+  kv(8, 'max_length_scg', gn('scg_max_len'));
   p(4, 'mapping:');
   p(6, 'settings:');
   kv(8, 'mapper', gv('dyn_mapper'));
@@ -1382,7 +1463,17 @@ function buildYAML() {
   document.querySelectorAll('#species-list .species-row').forEach(row => {
     const k = row.querySelector('.sp-key').value.trim();
     const n = row.querySelector('.sp-name').value.trim();
-    if (k) { p(2, `${k}:`); kv(4, 'name', n); }
+    const lineage = row.querySelector('.sp-lineage').value.trim();
+    const ref = row.querySelector('.sp-ref').value.trim();
+    if (!k) return;
+    p(2, `${k}:`);
+    kv(4, 'name', n);
+    if (lineage || ref) {
+      p(4, 'scg_selector:');
+      if (ref) kv(6, 'reference', ref);
+      p(6, 'settings:');
+      if (lineage) kv(8, 'lineage', lineage);
+    }
   });
   return L.join('\n');
 }
@@ -1587,6 +1678,15 @@ function populateForm(c) {
 
   sb('dyn_exec', dyn.execute);
   toggleStage('dyn_body', document.getElementById('dyn_exec'));
+  const scg  = dyn.scg_selector || {};
+  const scgs = scg.settings || {};
+  sb('scg_exec', scg.execute); dot('scg_exec','d_scg');
+  sv('scg_mapper', scgs.mapper || ''); mapperInfo('scg_mapper','scg_minfo');
+  if (scgs.mapper_extra_params !== undefined) { setOpt('scg_xp_en','scg_xp_body','scg_xp_hdr',true); sv('scg_xp',scgs.mapper_extra_params); }
+  else setOpt('scg_xp_en','scg_xp_body','scg_xp_hdr',false);
+  sv('scg_num_top', scgs.num_top_scgs  != null ? scgs.num_top_scgs  : 20);
+  sv('scg_min_len', scgs.min_length_scg != null ? scgs.min_length_scg : 4000);
+  sv('scg_max_len', scgs.max_length_scg != null ? scgs.max_length_scg : 8000);
   const dym = (dyn.mapping||{}).settings||{};
   sv('dyn_mapper', dym.mapper); mapperInfo('dyn_mapper','dyn_minfo');
   if (dym.mapper_extra_params !== undefined) { setOpt('dyn_xp_en','dyn_xp_body','dyn_xp_hdr',true); sv('dyn_xp',dym.mapper_extra_params); }
@@ -1612,7 +1712,12 @@ function populateForm(c) {
   document.getElementById('species-list').innerHTML = '';
   speciesSeq = 0;
   const species = c.species || {};
-  Object.entries(species).forEach(([k,v]) => addSpecies(k, (v||{}).name||''));
+  Object.entries(species).forEach(([k,v]) => {
+    const sv2 = v || {};
+    const scgSel = sv2.scg_selector || {};
+    const scgSelSettings = scgSel.settings || {};
+    addSpecies(k, sv2.name||'', scgSelSettings.lineage||'', scgSel.reference||'');
+  });
   if (!Object.keys(species).length) addSpecies('demo','Dmel Demo');
   render();
 }
@@ -1655,6 +1760,7 @@ function resetDefaults() {
       },
       dynamics: {
         execute: true,
+        scg_selector: { execute: true, settings: { num_top_scgs: 20, min_length_scg: 4000, max_length_scg: 8000 } },
         mapping: { settings: { mapper: 'bwa-aln' } },
         seqvista: { execute: true, settings: { individual_plots: 'plot', comparison_plots: 'plot', y_axis_log_scale_threshold_individual: 25, y_axis_log_scale_threshold_species: 25, mapping_quality_threshold: 5, minimum_count_snp: 5, minimum_frequency_snp: 0.1, minimum_count_indel: 3, minimum_frequency_indel: 0.01, end_distance: 100, exclude_quantile: 25 } }
       },

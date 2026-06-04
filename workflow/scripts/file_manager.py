@@ -245,11 +245,14 @@ def get_feature_library_ids_for_species(species):
 
 # -----------------------------------------------------------------------------------------------
 # Get scg library files for a given species (supports .fna, .fasta, .fa)
+# Returns an empty list when nothing is found (no exception) so callers can
+# distinguish "user provided none" from an unexpected error.
 def get_scg_library_file_list_for_species(species: str) -> list[tuple[str, str]]:
     # Construct reference folder path
     species_folder = species
 
     scg_library_folder = os.path.join(f"{species_folder}/raw/dynamics/scg")
+    library_files = []
     try:
         # Collect all supported reference files
         logger.debug(f"Looking for SCG library files in {scg_library_folder} for species {species}.")
@@ -258,12 +261,12 @@ def get_scg_library_file_list_for_species(species: str) -> list[tuple[str, str]]
         library_files += get_files_in_folder_matching_pattern(scg_library_folder, "*.fasta")
         library_files += get_files_in_folder_matching_pattern(scg_library_folder, "*.fa")
     except Exception as e:
-        # Try looking in species folder directly as fallback.
         logger.debug(f"Failed to find SCG library files in {scg_library_folder} for species {species}. Exception: {e}")
 
     if len(library_files) == 0:
-        raise Exception(f"No SCG library files found for species {species}.")
-        
+        logger.debug(f"No user-provided SCG library files found for species {species}.")
+        return []
+
     # Return as list of tuples: (filename without extension, full path)
     library_files_with_filename = [(get_cleaned_feature_library_id_for_library_path(f), f) for f in library_files]
 
@@ -306,4 +309,68 @@ def get_scg_library_file_for_species_and_library(species, library_id):
         if lib[0] == library_id:
             return lib[1]
     logger.warning(f"SCG library with ID {library_id} not found for species {species}. Available libraries: {libraries}")
-    raise Exception(f"SCG library with ID {library_id} not found for species {species}.")
+    raise ValueError(f"SCG library with ID {library_id} not found for species {species}.")
+
+# -----------------------------------------------------------------------------------------------
+# Resolve the reference genome path that SCG determination (BUSCO) will use.
+# Priority: species.{species}.scg_selector.reference → auto-detect from {species}/raw/ref/
+# Raises ValueError when 0 or >1 references are found without an explicit config override.
+def get_scg_determination_reference_path(species):
+    import logging as _log
+    config_ref = (
+        config.get("species", {})
+              .get(species, {})
+              .get("scg_selector", {})
+              .get("reference")
+    )
+    if config_ref:
+        return config_ref
+
+    refs = get_reference_file_list_for_species(species)
+
+    if len(refs) == 0:
+        raise ValueError(
+            f"No reference genome found for SCG determination of species '{species}'. "
+            f"Place a FASTA in {species}/raw/ref/ or set "
+            f"species.{species}.scg_selector.reference in config."
+        )
+
+    if len(refs) > 1:
+        ref_paths = ", ".join(r[1] for r in refs)
+        raise ValueError(
+            f"Multiple reference genomes found for species '{species}' ({ref_paths}). "
+            f"SCG determination requires exactly one reference. "
+            f"Please set species.{species}.scg_selector.reference in config."
+        )
+
+    _log.info(f"[SCG Selector] Auto-detected reference for '{species}': {refs[0][1]}")
+    return refs[0][1]
+
+# -----------------------------------------------------------------------------------------------
+# Return True when all of the following hold:
+#   1. scg_selector.execute is true in pipeline config
+#   2. No user-provided SCG FASTA exists in {species}/raw/dynamics/scg/
+#   3. A BUSCO lineage is configured for the species (required to run BUSCO)
+def should_auto_determine_scg(species):
+    if not config.get("pipeline", {}).get("dynamics", {}).get("scg_selector", {}).get("execute", True):
+        return False
+    if get_scg_library_file_list_for_species(species):
+        return False
+    lineage = config.get("species", {}).get(species, {}).get("scg_selector", {}).get("settings", {}).get("lineage")
+    return bool(lineage)
+
+# -----------------------------------------------------------------------------------------------
+# Return the SCG library ID to use: user-provided ID or the auto-determined sentinel.
+def get_effective_scg_library_id_for_species(species):
+    user_scgs = get_scg_library_file_list_for_species(species)
+    if user_scgs:
+        return user_scgs[0][0]
+    return f"{species}_determined_scg"
+
+# -----------------------------------------------------------------------------------------------
+# Return the FASTA path for the SCG library: user-provided or auto-determined.
+def get_effective_scg_library_path_for_species(species):
+    user_scgs = get_scg_library_file_list_for_species(species)
+    if user_scgs:
+        return user_scgs[0][1]
+    return f"{species}/processed/dynamics/scg/{species}_relevant_scg.fasta"

@@ -182,6 +182,34 @@ pipeline:
         # Optional: extra parameters passed directly to the mapper
         # For bwa-aln, defaults to "-n 0.01 -k 2 -l 1024 -o 2" (Oliva et al. 2021, 10.1093/bib/bbab076)
         #mapper_extra_params: ""
+
+    # ── SCG Selector ──────────────────────────────────────────────────────────
+    # Automatically determines single-copy genes (SCGs) via BUSCO when no SCG
+    # FASTA is provided in {species}/raw/dynamics/scg/.
+    # If a FASTA is already present there, this section is ignored and the
+    # user-provided file is used instead.
+    # Setting execute: true also enables an "SCG-only" run (ranking output is
+    # produced even when no feature libraries are present).
+    scg_selector:
+      # When true, run SCG determination if no user-provided SCG file exists (Default: true)
+      # Automatically skipped when a user-provided SCG FASTA is found in
+      # {species}/raw/dynamics/scg/ or when no lineage is configured for the species.
+      execute: true
+      settings:
+        # Mapper for SCG library mapping. Defaults to pipeline.dynamics.mapping.settings.mapper.
+        # Uncomment to override. Options: "bwa-mem2", "bwa-aln", "minimap2"
+        #mapper: "minimap2"
+        # Extra parameters passed directly to the mapper.
+        # Defaults to pipeline.dynamics.mapping.settings.mapper_extra_params if set,
+        # otherwise falls back to mapper-specific defaults (bwa-aln: Oliva et al. 2021, minimap2: "-ax sr").
+        #mapper_extra_params: ""
+        # Number of top-ranked SCGs to keep (Default: 20; per-species setting takes precedence if set)
+        num_top_scgs: 20
+        # Minimum SCG sequence length in bp to include (Default: 4000)
+        min_length_scg: 4000
+        # Maximum SCG sequence length in bp to include (Default: 8000)
+        max_length_scg: 8000
+
     seqvista:
       # When true, this sub-stage will be executed (Default: true)
       execute: true
@@ -231,3 +259,25 @@ species:
   demo:
     # Name of the species
     name: "Dmel Demo"
+
+    # Per-species SCG selector settings (only relevant when
+    # pipeline.dynamics.scg_selector.execute is true AND no user-provided SCG
+    # file exists in {species}/raw/dynamics/scg/).
+    scg_selector:
+      # Optional: exact path to the reference genome to use for SCG determination.
+      # Required when multiple FASTA files exist in {species}/raw/ref/.
+      # If omitted and exactly one reference is present, it is used automatically
+      # and an info message is written to the log.
+      #reference: "/path/to/reference.fasta"
+
+      settings:
+        # BUSCO lineage database name (required for SCG determination).
+        # Find available lineages at https://busco.ezlab.org/
+        # Example: "drosophilidae_odb12", "diptera_odb10", "insecta_odb10"
+        lineage: "drosophilidae_odb12"
+        # Number of top-ranked SCGs to keep (Default: 20)
+        num_top_scgs: 20
+        # Minimum SCG sequence length in bp to include (Default: 4000)
+        min_length_scg: 4000
+        # Maximum SCG sequence length in bp to include (Default: 8000)
+        max_length_scg: 8000

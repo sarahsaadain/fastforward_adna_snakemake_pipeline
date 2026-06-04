@@ -23,7 +23,7 @@ from scripts.file_manager import (
     get_samples_for_species_individual,
     get_feature_library_file_list_for_species,
     get_scg_library_file_list_for_species,
-    get_raw_reads_for_sample
+    get_raw_reads_for_sample,
 )
 
 # Import Snakemake plugin settings for executor modes
@@ -202,13 +202,41 @@ if workflow.exec_mode != ExecMode.SUBPROCESS:
         except Exception:
             lines.append("    Feature Libraries: (none found)")
 
-        try:
-            scg_libs = get_scg_library_file_list_for_species(sname)
+        scg_libs = get_scg_library_file_list_for_species(sname)
+        if scg_libs:
             lines.append(f"    SCG Libraries ({len(scg_libs)}):")
             for lib_id, lib_path in scg_libs:
                 lines.append(f"      - {lib_id}: {lib_path}")
-        except Exception:
-            lines.append("    SCG Libraries: (none found)")
+        else:
+            _scg_sel_active = config.get("pipeline", {}).get("dynamics", {}).get("scg_selector", {}).get("execute", True)
+            _lineage = config.get("species", {}).get(sname, {}).get("scg_selector", {}).get("settings", {}).get("lineage")
+            if not _scg_sel_active:
+                lines.append("    SCG Libraries: (none provided; scg_selector disabled)")
+            elif not _lineage:
+                lines.append("    SCG Libraries: (none provided; skipping auto-determination — no lineage configured for this species)")
+            else:
+                # Resolve which reference will be used — config key takes priority over auto-detection
+                _config_ref = config.get("species", {}).get(sname, {}).get("scg_selector", {}).get("reference")
+                if _config_ref:
+                    lines.append(f"    SCG Libraries: (will be auto-determined via BUSCO [{_lineage}]; reference: {_config_ref})")
+                else:
+                    try:
+                        refs = get_reference_file_list_for_species(sname)
+                        if len(refs) == 1:
+                            lines.append(f"    SCG Libraries: (will be auto-determined via BUSCO [{_lineage}]; reference: {refs[0][1]})")
+                        elif len(refs) > 1:
+                            lines.append(
+                                f"    SCG Libraries: (will be auto-determined via BUSCO [{_lineage}] — "
+                                f"WARNING: {len(refs)} references found, set "
+                                f"species.{sname}.scg_selector.reference in config)"
+                            )
+                        else:
+                            lines.append(
+                                f"    SCG Libraries: (will be auto-determined via BUSCO [{_lineage}] — "
+                                f"WARNING: no reference found in {sname}/raw/ref/)"
+                            )
+                    except Exception as e:
+                        lines.append(f"    SCG Libraries: (will be auto-determined via BUSCO [{_lineage}] — WARNING: {e})")
 
         species_lines.append("\n".join(lines))
 

@@ -75,8 +75,7 @@ elif _dyn_mapper == "bwa-aln":
         wrapper:
             "v9.3.0/bio/bwa/samse"
 
-    # Rule: Sort BAM file
-    rule  sort_bam_reads_to_library:
+    rule sort_bam_reads_to_library:
         input:
             "{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.unsorted.with_unmapped.bam"
         output:
@@ -124,29 +123,26 @@ else:
 
 # Rule: Remove unmapped reads
 rule remove_unmapped_reads_to_scg_feature_library:
-    # 2 Convert SAM to BAM
     input:
         "{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.sorted.with_unmapped.bam"
     output:
-        bam=temp("{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.sorted.bam") # needs to be called .unsorted.bam otherwise snakemake had problems with unambigous names
+        bam=temp("{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.sorted.bam")
     message: "Removing unmapped reads from BAM file for {input}"
     params:
-        extra="-b -F 4",  # optional params string
+        extra="-b -F 4",
     threads: 2
     wrapper:
         "v9.3.0/bio/samtools/view"
 
-# Rule: Index BAM file
 # SAMTOOLS doesn't parallelize the indexing work — it only parallelizes compression/decompression.
-rule  index_bam_reads_to_library:
-    # 4 Index BAM
+rule index_bam_reads_to_library:
     input:
         "{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.sorted.bam"
     output:
         "{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.sorted.bam.bai"
     message: "Indexing BAM file for {input}"
     params:
-        extra="",  # optional params string
+        extra="",
     threads: 5
     wrapper:
         "v9.3.0/bio/samtools/index"

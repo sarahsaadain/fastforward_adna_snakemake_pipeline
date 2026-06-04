@@ -121,9 +121,17 @@ All QC outputs for a given individual and reference are aggregated into a single
 
 This module quantifies the relative abundance and activity of transposable elements (TEs) and other genomic features across individuals. It works by mapping reads to a purpose-built reference consisting of TE sequences combined with single-copy genes (SCGs). The SCGs serve as a stable normalisation reference, making TE abundance estimates comparable across individuals regardless of differences in sequencing depth.
 
+### SCG Determination
+
+Single-copy genes can either be provided directly or determined automatically from the reference genome. If a FASTA file is placed under `{species}/raw/dynamics/scg/`, it is used as-is. If no file is present and **`pipeline.dynamics.scg_selector.execute`** is `true` (the default), the pipeline runs an automatic SCG determination step — provided a BUSCO lineage is configured for the species under **`species.<key>.scg_selector.settings.lineage`**.
+
+Automatic SCG determination runs in three steps. First, **BUSCO** is run against the reference genome in genome mode to identify Complete single-copy genes within the configured lineage database. BUSCO's coordinates are used to extract each gene's nucleotide sequence from the reference, applying minimum (**`settings.min_length_scg`**, default 4,000 bp) and maximum (**`settings.max_length_scg`**, default 8,000 bp) length filters. Second, the merged per-individual reads are mapped to this candidate SCG library and per-position coverage statistics are computed for every SCG in every individual. Third, SCGs are scored on three criteria — breadth of coverage, evenness of depth, and consistency of depth relative to the global SCG population — and the top-ranked sequences (**`settings.num_top_scgs`**, default 20) are selected. The ranking table is written to `{species}/results/dynamics/scg/` as a permanent result; the filtered FASTA is passed to the Library Preparation step.
+
+The mapper used for SCG read mapping is configured via **`pipeline.dynamics.scg_selector.settings.mapper`** and defaults to the same mapper set for the main Dynamics mapping step. The mapping BAMs produced during SCG determination are temporary and deleted once coverage statistics have been computed. For a detailed description of the scoring methodology see [docs/scg_determination.md](scg_determination.md).
+
 ### Library Preparation
 
-Two reference libraries are required: a **feature library** containing the TE (or other feature) sequences of interest, placed under `{species}/raw/dynamics/feature_library/`, and an **SCG library** containing sequences from single-copy conserved genes, placed under `{species}/raw/dynamics/scg/`. Both support `.fna`, `.fasta`, and `.fa` formats.
+The Dynamics pipeline requires a **feature library** containing the TE or other feature sequences of interest, placed under `{species}/raw/dynamics/feature_library/`. Both `.fna`, `.fasta`, and `.fa` formats are supported. The SCG library is either user-provided (placed under `{species}/raw/dynamics/scg/`) or produced by the SCG Determination step described above.
 
 Before mapping, sequence headers in both libraries are standardised and suffixed to make TE and SCG sequences distinguishable in the alignments — `_fle` is appended to every feature library header, and `_scg` to every SCG header. The two processed libraries are then concatenated into a single combined FASTA, which is indexed in preparation for mapping using the indexer that matches the configured mapper. Multiple feature libraries per species are supported; each produces an entirely independent set of downstream results.
 
@@ -135,13 +143,32 @@ Merged per-individual reads (from Module 1) are mapped to the combined SCG + TE 
 
 For each individual, the pipeline calculates read coverage across both the SCG and TE sequences in the combined library. The SCG coverage serves as the normalisation factor, accounting for differences in sequencing depth and mapping efficiency between individuals. This normalisation is critical for making meaningful comparisons of TE abundance across a population. Per-individual coverage files are combined into a species-level table, and an R-based plot is generated showing normalised TE abundance across all individuals. The order and labels of individuals in the plot are derived from the individual list for the species.
 
-### TEplotter Analysis
+### SeqVista Analysis
 
-TEplotter provides a complementary view focusing on a sequence overview (SO) — a tab-delimited file containing coverage, SNP, and indel information for each reference sequence. The analysis runs through a multi-step pipeline:
+**SeqVista** (formerly TEplotter) provides a complementary view focusing on a sequence overview (SO) — a tab-delimited file containing coverage, SNP, and indel information for each reference sequence. The analysis runs through a multi-step pipeline:
 
-First, the sorted BAM is converted into a sequence overview profile, using the combined library FASTA to determine sequence lengths. The raw SO values are then normalised, and occupancy statistics are estimated. The normalised profiles are converted into a plotable directory structure, processing all sequences and labelling outputs with the individual's identifier.
+First, the sorted BAM is converted into a sequence overview (`.so`) profile using `seqvista bam2so`, with sequence lengths derived from the combined library FASTA. The raw SO values are then normalised against SCG coverage using `seqvista normalize`, and per-sequence statistics are estimated using `seqvista estimate`. The normalised profiles are converted into a plotable directory structure using `seqvista so2plotable`, processing all sequences and labelling outputs with the individual's identifier.
 
-From the plotable directories, per-individual TE occupancy plots are generated. A second pass combines all individual plotable directories to produce a faceted species-level comparison plot, allowing side-by-side visual comparison of TE dynamics across all individuals simultaneously.
+From the plotable directories, per-individual TE occupancy plots are generated using `seqvista plot`. A second pass combines all individual plotable directories to produce a faceted species-level comparison plot, allowing side-by-side visual comparison of TE dynamics across all individuals simultaneously.
+
+#### Per-Individual Stats Files
+
+For each individual, **`so2stats`** computes per-sequence coverage and SNP statistics from the normalised SO file and writes a `{individual}_coverage.normalized.stats.tsv`. Each row represents one sequence in the combined library and contains:
+
+- **Coverage metrics** — `median_cov` (copy number proxy when SCG-normalised), `mad_cov` (robust spread), `cv_cov` (scale-independent variation), `max_cov` (peak coverage), `frac_low` (fraction of positions with near-zero coverage, proxy for absence or deletion)
+- **SNP metrics** — `n_snps` (total alt allele observations), `snp_density` (SNPs per 100 bp), `median_alt` (median alt allele count across SNP sites)
+
+#### Species-Level Comparison and Flagging
+
+After all individual stats files are produced, **`compare_stats`** pivots the per-individual long-format tables into a single wide-format species-level summary (`{species}_{feature_library}_stats_comparison.tsv`), with one row per sequence and per-sample metric columns named `{metric}__{sampleid}`. Cross-sample copy number metrics are added:
+
+- `cn_min` / `cn_max` — lowest and highest `median_cov` across all individuals
+- `cn_abs` — absolute range (`cn_max − cn_min`)
+- `cn_log2fc` — log₂ fold-change (`log2(cn_max / cn_min)`)
+
+Sequences are flagged if they show a relative copy number shift exceeding the **`CN_FC`** threshold (default log₂FC ≥ 2) or an absolute shift exceeding the **`CN_ABS`** threshold (default Δ ≥ 10). Flagged sequences are written to a companion file `{species}_{feature_library}_flagged_seqids.tsv` and sorted to the top of the comparison table.
+
+A top-level cross-library summary (`{species}_seqvista_stats_comparison.tsv`) aggregates the flagged sequence lists across all feature libraries into a single file for rapid inspection.
 
 ## Module 4 — Processing Summary
 
@@ -153,23 +180,8 @@ Because Qualimap and mapDamage2 output directories need to be co-located with ot
 
 ## Global Configuration and Pipeline Behaviour
 
-The entire Past Forward aDNA Pipeline is controlled through a single `config/config.yaml` file. Species to be processed are defined as a top-level mapping, each with an optional display name, and all modules run for every species listed.
+The entire Past Forward aDNA Pipeline is controlled through a single `config/config.yaml` file. Species to be processed are defined as a top-level mapping under `species:`, each with an optional display name, and all modules run for every species listed. Every major processing step can be independently enabled or disabled.
 
-Each major processing step can be independently enabled or disabled. The key toggles and their defaults are:
-
-- **`pipeline.raw_reads_processing.adapter_removal.execute`** — enable adapter removal (default `true`)
-- **`pipeline.raw_reads_processing.quality_filtering.execute`** — enable quality filtering (default `true`)
-- **`pipeline.raw_reads_processing.multiqc_merged_reads`** — enable FastQC on merged reads (default `true`)
-- **`pipeline.raw_reads_processing.contamination_analysis.execute`** — enable contamination analysis (default `true`)
-- **`pipeline.reference_processing.execute`** — enable the entire reference processing module (default `true`)
-- **`pipeline.reference_processing.mapping.settings.mapper`** — mapper to use: `bwa-mem2` (default), `bwa-aln`, `minimap2`
-- **`pipeline.reference_processing.deduplication.execute`** — enable deduplication (default `true`)
-- **`pipeline.reference_processing.damage_rescaling.execute`** — enable mapDamage2 rescaling (default `true`)
-- **`pipeline.reference_processing.damage_analysis.execute`** — enable mapDamage2 damage pattern analysis (default `true`)
-- **`pipeline.reference_processing.filter_unmapped_reads.execute`** — enable unmapped read removal or extraction (default `false`)
-- **`pipeline.reference_processing.coverage_analysis.execute`** — enable coverage and BAM statistics (default `true`)
-- **`pipeline.dynamics.mapping.settings.mapper`** — mapper to use for dynamics mapping: `bwa-mem2` (default), `bwa-aln`, `minimap2`
-
-A global **`pipeline.global.skip_existing_files`** option (default `true`) checks for already-completed outputs before the pipeline starts and excludes them from the target list, preventing redundant reprocessing when resuming an interrupted run.
+For a full description of all configuration options, defaults, and an annotated example config, see [config/README.md](../config/README.md).
 
 On every execution the pipeline logs extensive provenance information: timestamp, platform and OS details, Python and Snakemake versions, the active conda environment, the git commit hash of the pipeline code, the full command line used, all config file paths, and the complete loaded configuration. A minimum Snakemake version of 9.9.0 is enforced at startup.

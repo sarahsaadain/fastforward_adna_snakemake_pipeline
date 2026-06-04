@@ -211,13 +211,40 @@ Optionally removes or extracts reads that did not map to the reference. Default:
 
 ### Stage: `dynamics`
 
-TE and genomic feature abundance analysis — maps to a combined SCG + feature library for depth-normalised comparisons. Requires feature and SCG libraries placed in `{species}/raw/dynamics/`.
+TE and genomic feature abundance analysis — maps to a combined SCG + feature library for depth-normalised comparisons.
+
+Place feature libraries in `{species}/raw/dynamics/feature_library/` and, optionally, a pre-built SCG FASTA in `{species}/raw/dynamics/scg/`. If no SCG FASTA is provided and `scg_selector.execute` is `true`, SCGs are determined automatically via BUSCO (requires a lineage configured per species).
+
+#### `scg_selector`
+
+Automatically identifies single-copy genes (SCGs) from the reference genome using BUSCO. SCGs serve as coverage normalisers for the Dynamics pipeline. Skipped automatically when a user-provided SCG FASTA is already present in `{species}/raw/dynamics/scg/` or when no BUSCO lineage is configured for the species.
+
+Can also be used standalone (without feature libraries) to produce an SCG ranking table as the sole output.
+
+| Setting | Default | Description |
+|---|---|---|
+| `execute` | `true` | Enable SCG auto-determination when no user-provided FASTA is present. |
+| `settings.mapper` | *(inherits from `dynamics.mapping.settings.mapper`)* | Mapper for reads-to-SCG-library mapping. Uncomment to override. Options: `bwa-mem2`, `bwa-aln`, `minimap2`. |
+| `settings.mapper_extra_params` | *(inherits from `dynamics.mapping.settings.mapper_extra_params`)* | Optional extra parameters for the mapper. Falls back to mapper-specific defaults if not set. |
+| `settings.num_top_scgs` | `20` | Number of top-ranked SCGs to retain as normalisers. Per-species setting overrides this global default. |
+| `settings.min_length_scg` | `4000` | Minimum SCG sequence length in bp to include from BUSCO results. Per-species setting overrides this. |
+| `settings.max_length_scg` | `8000` | Maximum SCG sequence length in bp to include from BUSCO results. Per-species setting overrides this. |
+
+**Per-species SCG settings** (under `species.<key>.scg_selector`):
+
+| Setting | Default | Description |
+|---|---|---|
+| `settings.lineage` | — | **Required** for SCG auto-determination. BUSCO lineage database name (e.g. `drosophilidae_odb12`). Browse available lineages at [busco.ezlab.org](https://busco.ezlab.org/). |
+| `reference` | auto-detect | Path to the reference genome to use for BUSCO. Required when multiple FASTA files exist in `{species}/raw/ref/`; if only one is present it is auto-detected and logged. |
+| `settings.num_top_scgs` | *(pipeline default)* | Per-species override for the number of top-ranked SCGs. |
+| `settings.min_length_scg` | *(pipeline default)* | Per-species override for minimum SCG length. |
+| `settings.max_length_scg` | *(pipeline default)* | Per-species override for maximum SCG length. |
 
 #### `mapping`
 
 | Setting | Default | Description |
 |---|---|---|
-| `settings.mapper` | `bwa-mem2` | Mapper to use. Same options as `reference_processing.mapping`. |
+| `settings.mapper` | `bwa-mem2` | Mapper for feature-library mapping. Same options as `reference_processing.mapping`. |
 | `settings.mapper_extra_params` | — | Optional extra parameters passed directly to the mapper. |
 
 #### Other `dynamics` steps
@@ -375,6 +402,14 @@ pipeline:
   dynamics:
     execute: true
 
+    scg_selector:
+      execute: true
+      settings:
+        # mapper and mapper_extra_params default to dynamics.mapping.settings values if not set
+        num_top_scgs: 20
+        min_length_scg: 4000
+        max_length_scg: 8000
+
     mapping:
       settings:
         # Options: "bwa-mem2" (default), "bwa-aln", "minimap2"
@@ -407,4 +442,10 @@ pipeline:
 species:
   Dmel:
     name: "Drosophila melanogaster"
+    scg_selector:
+      # Required for SCG auto-determination. Find lineages at https://busco.ezlab.org/
+      settings:
+        lineage: "drosophilidae_odb12"
+      # Optional: explicit reference path (required only if multiple refs exist in raw/ref/)
+      #reference: "/path/to/reference.fasta"
 ```
