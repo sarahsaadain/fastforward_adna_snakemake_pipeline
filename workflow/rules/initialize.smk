@@ -17,15 +17,6 @@ import json
 # import version from workflow/scripts/version.py
 from scripts.version import __version__
 
-from scripts.file_manager import (
-    get_reference_file_list_for_species,
-    get_individuals_for_species,
-    get_samples_for_species_individual,
-    get_feature_library_file_list_for_species,
-    get_scg_library_file_list_for_species,
-    get_raw_reads_for_sample,
-)
-
 # Import Snakemake plugin settings for executor modes
 from snakemake_interface_executor_plugins.settings import ExecMode
 
@@ -156,91 +147,6 @@ if workflow.exec_mode != ExecMode.SUBPROCESS:
 
     config_str = yaml.dump(config.get("pipeline", {}), sort_keys=False, default_flow_style=False)
     logging.info("Loaded configuration:\n%s", config_str)
-
-    species_section = config.get("species", {})
-    species_lines = []
-    for sname, sdata in species_section.items():
-        display_name = f"{sdata.get('name', sname)} [{sname}]"
-        lines = [f"- {display_name}"]
-
-        try:
-            refs = get_reference_file_list_for_species(sname)
-            lines.append(f"    References ({len(refs)}):")
-            for ref_id, ref_path in refs:
-                lines.append(f"      - {ref_id}: {ref_path}")
-        except Exception:
-            lines.append("    References: (none found)")
-
-        try:
-            individuals = get_individuals_for_species(sname)
-            lines.append(f"    Individuals ({len(individuals)}):")
-            for ind in individuals:
-                lines.append(f"      - {ind}")
-                try:
-                    samples = get_samples_for_species_individual(sname, ind)
-                    lines.append(f"        Samples ({len(samples)}):")
-                    for s in samples:
-                        lines.append(f"          - {s}")
-                        try:
-                            reads = get_raw_reads_for_sample(sname, s)
-                            lines.append(f"            Reads ({len(reads)}):")
-                            for r in reads:
-                                lines.append(f"              {r}")
-                        except Exception:
-                            lines.append(f"            Reads: (reads not found)")
-
-                except Exception:
-                    lines.append(f"        Samples: (samples not found)")
-        except Exception:
-            lines.append("    Individuals: (none found)")
-
-        try:
-            feat_libs = get_feature_library_file_list_for_species(sname)
-            lines.append(f"    Feature Libraries ({len(feat_libs)}):")
-            for lib_id, lib_path in feat_libs:
-                lines.append(f"      - {lib_id}: {lib_path}")
-        except Exception:
-            lines.append("    Feature Libraries: (none found)")
-
-        scg_libs = get_scg_library_file_list_for_species(sname)
-        if scg_libs:
-            lines.append(f"    SCG Libraries ({len(scg_libs)}):")
-            for lib_id, lib_path in scg_libs:
-                lines.append(f"      - {lib_id}: {lib_path}")
-        else:
-            _scg_sel_active = config.get("pipeline", {}).get("dynamics", {}).get("scg_selector", {}).get("execute", True)
-            _lineage = config.get("species", {}).get(sname, {}).get("scg_selector", {}).get("settings", {}).get("lineage")
-            if not _scg_sel_active:
-                lines.append("    SCG Libraries: (none provided; scg_selector disabled)")
-            elif not _lineage:
-                lines.append("    SCG Libraries: (none provided; skipping auto-determination — no lineage configured for this species)")
-            else:
-                # Resolve which reference will be used — config key takes priority over auto-detection
-                _config_ref = config.get("species", {}).get(sname, {}).get("scg_selector", {}).get("reference")
-                if _config_ref:
-                    lines.append(f"    SCG Libraries: (will be auto-determined via BUSCO [{_lineage}]; reference: {_config_ref})")
-                else:
-                    try:
-                        refs = get_reference_file_list_for_species(sname)
-                        if len(refs) == 1:
-                            lines.append(f"    SCG Libraries: (will be auto-determined via BUSCO [{_lineage}]; reference: {refs[0][1]})")
-                        elif len(refs) > 1:
-                            lines.append(
-                                f"    SCG Libraries: (will be auto-determined via BUSCO [{_lineage}] — "
-                                f"WARNING: {len(refs)} references found, set "
-                                f"species.{sname}.scg_selector.reference in config)"
-                            )
-                        else:
-                            lines.append(
-                                f"    SCG Libraries: (will be auto-determined via BUSCO [{_lineage}] — "
-                                f"WARNING: no reference found in {sname}/raw/ref/)"
-                            )
-                    except Exception as e:
-                        lines.append(f"    SCG Libraries: (will be auto-determined via BUSCO [{_lineage}] — WARNING: {e})")
-
-        species_lines.append("\n".join(lines))
-
-    logging.info("Detected species (%d):\n%s", len(species_section), "\n\n".join(species_lines))
 
 # =================================================================================================
 # End of initialize.smk

@@ -4,6 +4,23 @@ import glob
 import re
 from venv import logger
 
+# Raised when the config requests individuals or references that do not exist on disk.
+# Unlike generic discovery failures, these must not be silently caught.
+class ConfigValidationError(Exception):
+    pass
+
+# -----------------------------------------------------------------------------------------------
+# Read the config filter lists for a given species and key (e.g. "individuals", "references").
+# Returns None when the key is absent/empty (meaning "use all").
+def _get_species_config_list(species, key):
+    try:
+        value = config.get("species", {}).get(species, {}).get(key)
+    except NameError:
+        return None
+    if not value:
+        return None
+    return list(value)
+
 # -----------------------------------------------------------------------------------------------
 # Get all files in a folder matching a specific pattern (e.g., *.fastq.gz)
 def get_files_in_folder_matching_pattern(folder: str, pattern: str) -> list:
@@ -109,9 +126,8 @@ def get_raw_reads_for_sample(species, sample):
         return [r1]      # Single-end
 
 # -----------------------------------------------------------------------------------------------
-# Get individual sample IDs for a given species based on raw read filenames
-def get_individuals_for_species(species):
-
+# (internal) Discover all individuals from disk without applying any config filter
+def _discover_all_individuals_for_species(species):
     samples = get_sample_ids_for_species(species)
     if len(samples) == 0:
         logger.warning(f"No samples found for species {species}.")
@@ -119,41 +135,81 @@ def get_individuals_for_species(species):
     individuals = set()
     for s in samples:
         individuals.add(get_individual_from_sample(s))
-
-    logger.debug(f"Individuals for species {species}: {individuals}")
-
+    logger.debug(f"Discovered individuals for species {species}: {individuals}")
     return sorted(list(individuals))
 
 # -----------------------------------------------------------------------------------------------
-# Get reference files for a given species (supports .fna, .fasta, .fa)
-def get_reference_file_list_for_species(species: str) -> list[tuple[str, str]]:
-    # Construct reference folder path
+# Get individual sample IDs for a given species based on raw read filenames.
+# If config specifies an 'individuals' list for this species, only those are returned.
+# Raises ConfigValidationError when a requested individual is not found on disk.
+def get_individuals_for_species(species):
+    all_individuals = _discover_all_individuals_for_species(species)
+
+    requested = _get_species_config_list(species, "individuals")
+    if requested is None:
+        return all_individuals
+
+    all_set = set(all_individuals)
+    missing = [ind for ind in requested if ind not in all_set]
+    if missing:
+        raise ConfigValidationError(
+            f"Species '{species}': the following individuals were requested in the config "
+            f"but not found on disk: {missing}. "
+            f"Available individuals: {sorted(all_set)}"
+        )
+
+    selected = [ind for ind in all_individuals if ind in set(requested)]
+    logger.debug(f"Config-filtered individuals for species {species}: {selected}")
+    return selected
+
+# -----------------------------------------------------------------------------------------------
+# (internal) Discover all reference files from disk without applying any config filter
+def _discover_all_reference_file_list_for_species(species: str) -> list[tuple[str, str]]:
     species_folder = species
     reference_folder = f"{species}/raw/ref"
     try:
-        # Collect all supported reference files
         logger.debug(f"Looking for reference files in {reference_folder} for species {species}.")
-
         reference_files = get_files_in_folder_matching_pattern(reference_folder, "*.fna")
         reference_files += get_files_in_folder_matching_pattern(reference_folder, "*.fasta")
         reference_files += get_files_in_folder_matching_pattern(reference_folder, "*.fa")
-    except Exception as e:
-        # Try looking in species folder directly as fallback.
+    except Exception:
         logger.debug(f"Reference folder not found for species {species}. Trying species folder directly.")
-
         reference_files = get_files_in_folder_matching_pattern(species_folder, "*.fna")
         reference_files += get_files_in_folder_matching_pattern(species_folder, "*.fasta")
         reference_files += get_files_in_folder_matching_pattern(species_folder, "*.fa")
 
     if len(reference_files) == 0:
         raise Exception(f"No reference found for species {species}.")
-        
-    # Return as list of tuples: (filename without extension, full path)
-    reference_files_with_filename = [(os.path.splitext(os.path.basename(f))[0].replace('.', '_'), f) for f in reference_files]
 
-    logger.debug(f"Reference files for species {species}: {reference_files_with_filename}")
+    result = [(os.path.splitext(os.path.basename(f))[0].replace('.', '_'), f) for f in reference_files]
+    logger.debug(f"Discovered reference files for species {species}: {result}")
+    return result
 
-    return reference_files_with_filename
+# -----------------------------------------------------------------------------------------------
+# Get reference files for a given species (supports .fna, .fasta, .fa).
+# If config specifies a 'references' list for this species, only those are returned.
+# Reference IDs are the filename stem with dots replaced by underscores
+# (e.g. 'genome.fna' → 'genome', 'EquCab3.0.fna' → 'EquCab3_0').
+# Raises ConfigValidationError when a requested reference ID is not found on disk.
+def get_reference_file_list_for_species(species: str) -> list[tuple[str, str]]:
+    all_refs = _discover_all_reference_file_list_for_species(species)
+
+    requested = _get_species_config_list(species, "references")
+    if requested is None:
+        return all_refs
+
+    all_map = {ref_id: ref_path for ref_id, ref_path in all_refs}
+    missing = [ref_id for ref_id in requested if ref_id not in all_map]
+    if missing:
+        raise ConfigValidationError(
+            f"Species '{species}': the following references were requested in the config "
+            f"but not found on disk: {missing}. "
+            f"Available reference IDs: {sorted(all_map.keys())}"
+        )
+
+    selected = [(ref_id, all_map[ref_id]) for ref_id in requested]
+    logger.debug(f"Config-filtered references for species {species}: {selected}")
+    return selected
 
 # -----------------------------------------------------------------------------------------------
 # Extract individual ID from a given file path or sample name
@@ -202,34 +258,51 @@ def get_samples_for_species_individual(species, individual):
     return samples_of_individual
 
 # -----------------------------------------------------------------------------------------------
-# Get reference files for a given species (supports .fna, .fasta, .fa)
-def get_feature_library_file_list_for_species(species: str) -> list[tuple[str, str]]:
-    # Construct reference folder path
+# (internal) Discover all feature library files from disk without applying any config filter
+def _discover_all_feature_library_file_list_for_species(species: str) -> list[tuple[str, str]]:
     species_folder = species
-
-    library_files = []
-
     feature_library_folder = f"{species_folder}/raw/dynamics/feature_library"
+    library_files = []
     try:
-        # Collect all supported reference files
         logger.debug(f"Looking for feature library files in {feature_library_folder} for species {species}.")
-
         library_files = get_files_in_folder_matching_pattern(feature_library_folder, "*.fna")
         library_files += get_files_in_folder_matching_pattern(feature_library_folder, "*.fasta")
         library_files += get_files_in_folder_matching_pattern(feature_library_folder, "*.fa")
     except Exception as e:
-        # Try looking in species folder directly as fallback.
         logger.warning(f"Failed to find feature library files in {feature_library_folder} for species {species}. Exception: {e}")
 
     if len(library_files) == 0:
         raise Exception(f"No feature library files found for species {species}.")
-        
-    # Return as list of tuples: (filename without extension, full path)
-    library_files_with_filename = [(os.path.splitext(os.path.basename(f))[0].replace('.', '_'), f) for f in library_files]
 
-    logger.debug(f"Feature library files for species {species}: {library_files_with_filename}")
+    result = [(os.path.splitext(os.path.basename(f))[0].replace('.', '_'), f) for f in library_files]
+    logger.debug(f"Discovered feature library files for species {species}: {result}")
+    return result
 
-    return library_files_with_filename
+# -----------------------------------------------------------------------------------------------
+# Get feature library files for a given species (supports .fna, .fasta, .fa).
+# If config specifies a 'feature_libraries' list for this species, only those are returned.
+# Library IDs are the filename stem with dots replaced by underscores
+# (e.g. 'genes.fna' → 'genes', 'my.lib.fna' → 'my_lib').
+# Raises ConfigValidationError when a requested library ID is not found on disk.
+def get_feature_library_file_list_for_species(species: str) -> list[tuple[str, str]]:
+    all_libs = _discover_all_feature_library_file_list_for_species(species)
+
+    requested = _get_species_config_list(species, "feature_libraries")
+    if requested is None:
+        return all_libs
+
+    all_map = {lib_id: lib_path for lib_id, lib_path in all_libs}
+    missing = [lib_id for lib_id in requested if lib_id not in all_map]
+    if missing:
+        raise ConfigValidationError(
+            f"Species '{species}': the following feature libraries were requested in the config "
+            f"but not found on disk: {missing}. "
+            f"Available feature library IDs: {sorted(all_map.keys())}"
+        )
+
+    selected = [(lib_id, all_map[lib_id]) for lib_id in requested]
+    logger.debug(f"Config-filtered feature libraries for species {species}: {selected}")
+    return selected
 
 # -----------------------------------------------------------------------------------------------
 # Get only reference file paths for a species

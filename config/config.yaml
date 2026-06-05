@@ -260,6 +260,33 @@ species:
     # Name of the species
     name: "Dmel Demo"
 
+    # Optional: restrict which individuals to process for this species.
+    # If omitted, all individuals discovered in {species}/raw/reads/ are used.
+    # Each entry must match the individual ID extracted from read filenames
+    # (the part before the first "_", e.g. "IND001" from "IND001_L001_R1.fastq.gz").
+    # An error is raised if any listed ID is not found on disk.
+    #individuals:
+    #  - IND001
+    #  - IND002
+
+    # Optional: restrict which reference genomes to use for this species.
+    # If omitted, all references discovered in {species}/raw/ref/ are used.
+    # Each entry must match the reference ID derived from the filename:
+    # basename without extension, dots replaced by underscores
+    # (e.g. "genome.fna" → "genome", "EquCab3.0.fna" → "EquCab3_0").
+    # An error is raised if any listed ID is not found on disk.
+    #references:
+    #  - genome
+
+    # Optional: restrict which feature libraries to use for this species.
+    # If omitted, all libraries discovered in {species}/raw/dynamics/feature_library/ are used.
+    # Each entry must match the library ID derived from the filename:
+    # basename without extension, dots replaced by underscores
+    # (e.g. "genes.fna" → "genes", "my.lib.fna" → "my_lib").
+    # An error is raised if any listed ID is not found on disk.
+    #feature_libraries:
+    #  - genes
+
     # Per-species SCG selector settings (only relevant when
     # pipeline.dynamics.scg_selector.execute is true AND no user-provided SCG
     # file exists in {species}/raw/dynamics/scg/).
