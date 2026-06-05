@@ -273,6 +273,24 @@ Consolidates all QC outputs into MultiQC HTML reports.
 | `settings.individual_multiqc` | on | Generate a per-individual MultiQC summary report (all references, one individual). |
 | `settings.species_multiqc` | on | Generate a per-species MultiQC summary report (all individuals, all references). |
 
+## Species settings
+
+Each entry under `species:` in the config corresponds to a species folder in the pipeline root. The key must match the folder name exactly.
+
+| Setting | Default | Description |
+|---|---|---|
+| `name` | — | Human-readable species name used in reports. |
+| `individuals` | *(all discovered)* | Optional list of individual IDs to process. Each ID must match the part of a read filename before the first `_` (e.g. `IND001` from `IND001_L001_R1.fastq.gz`). If omitted, all individuals discovered in `{species}/raw/reads/` are used. An error is raised if any listed ID is not found on disk. |
+| `references` | *(all discovered)* | Optional list of reference IDs to process. IDs are derived from filenames: basename without extension, dots replaced by underscores (e.g. `EquCab3.0.fna` → `EquCab3_0`). If omitted, all references in `{species}/raw/ref/` are used. An error is raised if any listed ID is not found on disk. |
+| `feature_libraries` | *(all discovered)* | Optional list of feature library IDs to use for the Dynamics stage. Same ID format as `references`. If omitted, all libraries in `{species}/raw/dynamics/feature_library/` are used. An error is raised if any listed ID is not found on disk. |
+| `scg_selector.settings.lineage` | — | Required for SCG auto-determination. BUSCO lineage name (e.g. `drosophilidae_odb12`). Browse available lineages at [busco.ezlab.org](https://busco.ezlab.org/). |
+| `scg_selector.reference` | auto-detect | Explicit path to the reference FASTA used by BUSCO. Required when multiple FASTAs exist in `{species}/raw/ref/`; auto-detected and logged when exactly one is present. |
+| `scg_selector.settings.num_top_scgs` | *(pipeline default)* | Per-species override for the number of top-ranked SCGs to retain. |
+| `scg_selector.settings.min_length_scg` | *(pipeline default)* | Per-species override for minimum SCG sequence length in bp. |
+| `scg_selector.settings.max_length_scg` | *(pipeline default)* | Per-species override for maximum SCG sequence length in bp. |
+
+When `individuals`, `references`, or `feature_libraries` are specified, the startup preview logs which items were found but not selected under **"ignored"** entries. This makes it easy to verify your selection before a full run.
+
 ### Minimum Config
 
 Only `project_name` and at least one entry under `species` are required. All pipeline stages run with their defaults.
@@ -442,6 +460,17 @@ pipeline:
 species:
   Dmel:
     name: "Drosophila melanogaster"
+    # Optional: process only these individuals (all discovered if omitted)
+    #individuals:
+    #  - IND001
+    #  - IND002
+    # Optional: process only these references (all discovered if omitted)
+    # IDs are filename stems with dots replaced by underscores (e.g. genome.fna → genome)
+    #references:
+    #  - genome
+    # Optional: use only these feature libraries (all discovered if omitted)
+    #feature_libraries:
+    #  - my_lib
     scg_selector:
       # Required for SCG auto-determination. Find lineages at https://busco.ezlab.org/
       settings:

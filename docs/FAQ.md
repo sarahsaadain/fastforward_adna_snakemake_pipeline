@@ -62,6 +62,49 @@ No. The reference can be any FASTA file of sequences you want to map to and anal
 **Q: Which format does the reference need to be in?**
 The reference must be in FASTA format with a `.fa`, `.fasta`, or `.fna` extension. pastForward normalises the reference internally, so you can use any of these extensions without issue.
 
+**Q: Can I process only a subset of individuals for a species?**
+Yes. Add an `individuals` list under the species entry in `config.yaml`:
+
+```yaml
+species:
+  Dmel:
+    name: "Drosophila melanogaster"
+    individuals:
+      - IND001
+      - IND002
+```
+
+Each entry must match the individual identifier extracted from read filenames — the part before the first `_` (e.g. `IND001` from `IND001_L001_R1.fastq.gz`). If the list is omitted, all individuals discovered on disk are processed. The startup preview will report which individuals were found but not selected under a "ignored" section.
+
+**Q: Can I use only specific reference genomes for a species?**
+Yes. Add a `references` list under the species entry:
+
+```yaml
+species:
+  Dmel:
+    name: "Drosophila melanogaster"
+    references:
+      - genome
+```
+
+Each entry must match the reference ID derived from the filename: basename without extension, with dots replaced by underscores (e.g. `EquCab3.0.fna` → `EquCab3_0`). If omitted, all references in `{species}/raw/ref/` are used.
+
+**Q: Can I use only specific feature libraries for the Dynamics stage?**
+Yes. Add a `feature_libraries` list under the species entry:
+
+```yaml
+species:
+  Dmel:
+    name: "Drosophila melanogaster"
+    feature_libraries:
+      - my_lib
+```
+
+Same ID format as references (filename stem, dots → underscores). If omitted, all libraries in `{species}/raw/dynamics/feature_library/` are used.
+
+**Q: What happens if I list an individual, reference, or feature library that does not exist on disk?**
+pastForward raises an error at startup and aborts before any processing starts. The error message lists which IDs were not found and shows all available IDs, so you can correct the config. This prevents silent misconfiguration where a typo would cause a run to silently skip data.
+
 **Q: Can I add new samples after the first run?**
 Yes. pastForward is designed to be flexible and can accommodate new samples at any time. Just add the new FASTQ files to the appropriate `<species>/raw/reads/` folder. pastForward will detect and process them automatically.
 
