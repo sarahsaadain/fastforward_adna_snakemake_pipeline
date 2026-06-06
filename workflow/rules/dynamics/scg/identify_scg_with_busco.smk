@@ -22,6 +22,22 @@ def _scg_setting(wildcards, key, default):
     )
 
 
+def _get_busco_lineage(wildcards):
+    lineage = (
+        config.get("species", {})
+              .get(wildcards.species, {})
+              .get("scg_selector", {})
+              .get("settings", {})
+              .get("lineage")
+    )
+    if lineage is None:
+        raise ValueError(
+            f"BUSCO lineage is required for species '{wildcards.species}' but was not provided. "
+            f"Set species.{wildcards.species}.scg_selector.settings.lineage in your config."
+        )
+    return lineage
+
+
 rule prepare_scg_determination_reference:
     input:
         ref=lambda wildcards: get_scg_determination_reference_path(wildcards.species)
@@ -48,7 +64,7 @@ rule run_busco_for_scg_determination:
     message: "Running BUSCO to identify single-copy genes for {wildcards.species}"
     params:
         mode="genome",
-        lineage=lambda wildcards: config.get("species", {}).get(wildcards.species, {}).get("scg_selector", {}).get("settings", {}).get("lineage"),
+        lineage=lambda wildcards: _get_busco_lineage(wildcards),
         extra="",
     threads: 8
     wrapper:
