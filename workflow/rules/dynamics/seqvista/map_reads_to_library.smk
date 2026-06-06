@@ -2,11 +2,15 @@
 ####################################################
 # Snakemake rules
 ####################################################
-_dyn_settings     = config.get("pipeline", {}).get("dynamics", {}).get("mapping", {}).get("settings", {})
-_dyn_mapper       = _dyn_settings.get("mapper", "bwa-mem2")
+_dyn_settings        = config.get("pipeline", {}).get("dynamics", {}).get("mapping", {}).get("settings", {})
+_dyn_mapper          = _dyn_settings.get("mapper", "bwa-mem2")
 _BWA_ALN_DEFAULTS    = "-n 0.01 -k 2 -l 1024 -o 2"  # Oliva et al. 2021 (10.1093/bib/bbab076)
 _MINIMAP2_DEFAULTS   = "-ax sr"
-_dyn_mapper_extra = _dyn_settings.get("mapper_extra_params", _BWA_ALN_DEFAULTS if _dyn_mapper == "bwa-aln" else (_MINIMAP2_DEFAULTS if _dyn_mapper == "minimap2" else ""))
+_dyn_mapper_extra    = _dyn_settings.get("mapper_extra_params", _BWA_ALN_DEFAULTS if _dyn_mapper == "bwa-aln" else (_MINIMAP2_DEFAULTS if _dyn_mapper == "minimap2" else ""))
+_dyn_keep_mapped_bam = _dyn_settings.get("keep_mapped_bam", False)
+
+_MAPPED_BAM = "{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.sorted.bam"
+_MAPPED_BAI = _MAPPED_BAM + ".bai"
 
 if _dyn_mapper == "minimap2":
     rule index_library_for_mapping_minimap2:
@@ -126,7 +130,7 @@ rule remove_unmapped_reads_to_scg_feature_library:
     input:
         "{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.sorted.with_unmapped.bam"
     output:
-        bam="{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.sorted.bam"
+        bam=_MAPPED_BAM if _dyn_keep_mapped_bam else temp(_MAPPED_BAM)
     message: "Removing unmapped reads from BAM file for {input}"
     params:
         extra="-b -F 4",
@@ -139,7 +143,7 @@ rule index_bam_reads_to_library:
     input:
         "{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.sorted.bam"
     output:
-        "{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.sorted.bam.bai"
+        _MAPPED_BAI if _dyn_keep_mapped_bam else temp(_MAPPED_BAI)
     message: "Indexing BAM file for {input}"
     params:
         extra="",

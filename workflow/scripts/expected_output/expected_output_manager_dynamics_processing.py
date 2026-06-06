@@ -58,7 +58,18 @@ def get_expected_output_dynamics_processing(species):
 
     all_inputs.append(f"{species}/results/dynamics/{species}_seqvista_stats_comparison.tsv")
 
+    keep_mapped_bam = dyn_cfg.get("mapping", {}).get("settings", {}).get("keep_mapped_bam", False)
+
     for feature_library in feature_libraries:
+
+        if keep_mapped_bam:
+            for individual in individuals:
+                all_inputs.append(
+                    f"{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.sorted.bam"
+                )
+                all_inputs.append(
+                    f"{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.sorted.bam.bai"
+                )
 
         if dyn_cfg.get("seqvista", {}).get("execute", True):
 

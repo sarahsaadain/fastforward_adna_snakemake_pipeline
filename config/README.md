@@ -246,6 +246,7 @@ Can also be used standalone (without feature libraries) to produce an SCG rankin
 |---|---|---|
 | `settings.mapper` | `bwa-mem2` | Mapper for feature-library mapping. Same options as `reference_processing.mapping`. |
 | `settings.mapper_extra_params` | — | Optional extra parameters passed directly to the mapper. |
+| `settings.keep_mapped_bam` | `false` | When `true`, the filtered sorted BAM and its index (`{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.sorted.bam[.bai]`) are kept as permanent outputs and explicitly requested by the pipeline. When `false` (default), they are marked as temporary and deleted after SeqVista consumes them. Set to `true` to inspect the mapped BAM or to run the mapping step independently of SeqVista. |
 
 #### Other `dynamics` steps
 

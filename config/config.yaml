@@ -182,6 +182,11 @@ pipeline:
         # Optional: extra parameters passed directly to the mapper
         # For bwa-aln, defaults to "-n 0.01 -k 2 -l 1024 -o 2" (Oliva et al. 2021, 10.1093/bib/bbab076)
         #mapper_extra_params: ""
+        # When true, the filtered sorted BAM (and its index) produced by the dynamics mapping step
+        # are kept as permanent outputs in {species}/processed/dynamics/{feature_library}/mapped/.
+        # When false (default), they are marked as temporary and deleted after SeqVista consumes them.
+        # Set to true to inspect the BAM or to run the mapping step independently of SeqVista.
+        keep_mapped_bam: false
 
     # ── SCG Selector ──────────────────────────────────────────────────────────
     # Automatically determines single-copy genes (SCGs) via BUSCO when no SCG

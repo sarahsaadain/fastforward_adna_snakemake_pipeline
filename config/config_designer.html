@@ -1082,6 +1082,13 @@
                   </div>
                 </div>
               </div>
+              <div class="toggle-wrap" style="margin-top:8px">
+                <label class="toggle">
+                  <input type="checkbox" id="dyn_keep_mapped_bam" onchange="render()">
+                  <span class="slider"></span>
+                </label>
+                <label class="lbl" for="dyn_keep_mapped_bam">Keep mapped BAM &amp; index after mapping <span style="color:var(--text-muted);font-size:.75em">(default: off — deleted after SeqVista consumes them)</span></label>
+              </div>
             </div>
           </div>
 
@@ -1456,6 +1463,7 @@ function buildYAML() {
   p(6, 'settings:');
   kv(8, 'mapper', gv('dyn_mapper'));
   if (gb('dyn_xp_en') && gv('dyn_xp').trim()) kv(8, 'mapper_extra_params', gv('dyn_xp'));
+  kv(8, 'keep_mapped_bam', gb('dyn_keep_mapped_bam'));
   p(4, 'seqvista:');
   kv(6, 'execute', gb('sv_exec'));
   p(6, 'settings:');
@@ -1716,6 +1724,7 @@ function populateForm(c) {
   sv('dyn_mapper', dym.mapper); mapperInfo('dyn_mapper','dyn_minfo');
   if (dym.mapper_extra_params !== undefined) { setOpt('dyn_xp_en','dyn_xp_body','dyn_xp_hdr',true); sv('dyn_xp',dym.mapper_extra_params); }
   else setOpt('dyn_xp_en','dyn_xp_body','dyn_xp_hdr',false);
+  sb('dyn_keep_mapped_bam', dym.keep_mapped_bam);
   sb('sv_exec',  (dyn.seqvista||{}).execute);                     dot('sv_exec','d_sv');
   const svs = (dyn.seqvista||{}).settings||{};
   sv('sv_individual_plots', svs.individual_plots || 'plot');
