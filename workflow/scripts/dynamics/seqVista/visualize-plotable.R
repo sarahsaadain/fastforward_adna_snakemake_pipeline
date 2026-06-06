@@ -208,7 +208,7 @@ if (nplots>1) {
 }
 
 if(!debug){
-  ggsave(outfile, plot = plo, width = width, height = height, dpi = dpi)
+  ggsave(outfile, plot = plo, width = width, height = height, dpi = dpi, , limitsize = FALSE)
 }else{
   plot(plo)
 }
