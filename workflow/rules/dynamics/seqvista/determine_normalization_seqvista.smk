@@ -33,7 +33,7 @@ def combine_seqvista_stats_across_feature_libraries_input(wildcards):
 rule determine_seqvista_of_individual_bam_to_so:
     input:
         bam="{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.sorted.bam",
-        fasta="{species}/processed/dynamics/lib/{feature_library}_and_scg.suffixed.fasta"
+        fasta="{species}/processed/dynamics/{feature_library}/library/{feature_library}_and_scg.suffixed.fasta"
     output:
         coverage=temp("{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_coverage.tsv")
     log:

@@ -47,7 +47,7 @@ rule clean_feature_library_name:
     input:
         clean_feature_library_name_input
     output:
-        temp("{species}/processed/dynamics/lib/feature_library/{feature_library}.clean.fasta")
+        temp("{species}/processed/dynamics/{feature_library}/library/{feature_library}.clean.fasta")
     message: "Preparing TE library for {wildcards.species}"
     shell:
         """
@@ -56,9 +56,9 @@ rule clean_feature_library_name:
 
 rule prepare_feature_library:
     input:
-        "{species}/processed/dynamics/lib/feature_library/{feature_library}.clean.fasta"
+        "{species}/processed/dynamics/{feature_library}/library/{feature_library}.clean.fasta"
     output:
-        temp("{species}/processed/dynamics/lib/feature_library/{feature_library}.suffixed.fasta")
+        temp("{species}/processed/dynamics/{feature_library}/library/{feature_library}.suffixed.fasta")
     message: "Preparing TE library for {wildcards.species}"
     shell:
         # remove trailing whitespace from headers and append _fle to each header
@@ -70,7 +70,7 @@ rule clean_scg_library_name:
     input:
         clean_scg_library_name_input
     output:
-        temp("{species}/processed/dynamics/lib/scg/{scg_library}.clean.fasta")
+        temp("{species}/processed/dynamics/scg/library/{scg_library}.clean.fasta")
     message: "Preparing SCG library for {wildcards.species}"
     shell:
         """
@@ -79,9 +79,9 @@ rule clean_scg_library_name:
 
 rule prepare_scg_library:
     input:
-        "{species}/processed/dynamics/lib/scg/{scg_library}.clean.fasta"
+        "{species}/processed/dynamics/scg/library/{scg_library}.clean.fasta"
     output:
-        temp("{species}/processed/dynamics/lib/scg/{scg_library}.suffixed.fasta")
+        temp("{species}/processed/dynamics/scg/library/{scg_library}.suffixed.fasta")
     message: "Preparing SCG library for {wildcards.species}"
     shell:
         # remove trailing whitespace from headers and append _scg to each header
@@ -91,10 +91,10 @@ rule prepare_scg_library:
 
 rule combine_scg_and_ref_library:
     input:
-        scg=lambda wildcards: f"{wildcards.species}/processed/dynamics/lib/scg/{get_effective_scg_library_id_for_species(wildcards.species)}.suffixed.fasta",
-        fl="{species}/processed/dynamics/lib/feature_library/{feature_library}.suffixed.fasta"
+        scg=lambda wildcards: f"{wildcards.species}/processed/dynamics/scg/library/{get_effective_scg_library_id_for_species(wildcards.species)}.suffixed.fasta",
+        fl="{species}/processed/dynamics/{feature_library}/library/{feature_library}.suffixed.fasta"
     output:
-        library="{species}/processed/dynamics/lib/{feature_library}_and_scg.suffixed.fasta"
+        library="{species}/processed/dynamics/{feature_library}/library/{feature_library}_and_scg.suffixed.fasta"
     message: "Concatenating SCG and Feature libraries for {wildcards.species}"
     shell:
         """

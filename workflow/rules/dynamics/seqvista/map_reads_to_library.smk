@@ -11,11 +11,11 @@ _dyn_mapper_extra = _dyn_settings.get("mapper_extra_params", _BWA_ALN_DEFAULTS i
 if _dyn_mapper == "minimap2":
     rule index_library_for_mapping_minimap2:
         input:
-            target="{species}/processed/dynamics/lib/{feature_library}_and_scg.suffixed.fasta"
+            target="{species}/processed/dynamics/{feature_library}/library/{feature_library}_and_scg.suffixed.fasta"
         output:
-            "{species}/processed/dynamics/lib/{feature_library}_and_scg.suffixed.fasta.mmi",
+            "{species}/processed/dynamics/{feature_library}/library/{feature_library}_and_scg.suffixed.fasta.mmi",
         log:
-            "{species}/processed/dynamics/lib/{feature_library}_and_scg_minimap2_index.log"
+            "{species}/processed/dynamics/{feature_library}/library/{feature_library}_and_scg_minimap2_index.log"
         message: "Indexing SCG and Feature library {input} with minimap2"
         wrapper:
             "v9.3.0/bio/minimap2/index"
@@ -23,7 +23,7 @@ if _dyn_mapper == "minimap2":
     rule map_reads_to_scg_feature_library_minimap2:
         input:
             query=["{species}/processed/reads/reads_merged/{individual}.fastq.gz"],
-            target="{species}/processed/dynamics/lib/{feature_library}_and_scg.suffixed.fasta.mmi",
+            target="{species}/processed/dynamics/{feature_library}/library/{feature_library}_and_scg.suffixed.fasta.mmi",
         output:
             temp("{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.sorted.with_unmapped.bam"),
         log:
@@ -39,11 +39,11 @@ if _dyn_mapper == "minimap2":
 elif _dyn_mapper == "bwa-aln":
     rule index_library_for_mapping_bwa_aln:
         input:
-            "{species}/processed/dynamics/lib/{feature_library}_and_scg.suffixed.fasta"
+            "{species}/processed/dynamics/{feature_library}/library/{feature_library}_and_scg.suffixed.fasta"
         output:
-            multiext("{species}/processed/dynamics/lib/{feature_library}_and_scg.suffixed.fasta", ".amb", ".ann", ".bwt", ".pac", ".sa"),
+            multiext("{species}/processed/dynamics/{feature_library}/library/{feature_library}_and_scg.suffixed.fasta", ".amb", ".ann", ".bwt", ".pac", ".sa"),
         log:
-            "{species}/processed/dynamics/lib/{feature_library}_and_scg_bwa_aln_index.log"
+            "{species}/processed/dynamics/{feature_library}/library/{feature_library}_and_scg_bwa_aln_index.log"
         message: "Indexing SCG and Feature library {input} with BWA (for BWA ALN)"
         wrapper:
             "v9.3.0/bio/bwa/index"
@@ -51,7 +51,7 @@ elif _dyn_mapper == "bwa-aln":
     rule align_reads_to_library_bwa_aln:
         input:
             fastq="{species}/processed/reads/reads_merged/{individual}.fastq.gz",
-            idx=multiext("{species}/processed/dynamics/lib/{feature_library}_and_scg.suffixed.fasta", ".amb", ".ann", ".bwt", ".pac", ".sa"),
+            idx=multiext("{species}/processed/dynamics/{feature_library}/library/{feature_library}_and_scg.suffixed.fasta", ".amb", ".ann", ".bwt", ".pac", ".sa"),
         output:
             temp("{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.sai"),
         log:
@@ -66,7 +66,7 @@ elif _dyn_mapper == "bwa-aln":
         input:
             fastq="{species}/processed/reads/reads_merged/{individual}.fastq.gz",
             sai="{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.sai",
-            idx=multiext("{species}/processed/dynamics/lib/{feature_library}_and_scg.suffixed.fasta", ".amb", ".ann", ".bwt", ".pac", ".sa"),
+            idx=multiext("{species}/processed/dynamics/{feature_library}/library/{feature_library}_and_scg.suffixed.fasta", ".amb", ".ann", ".bwt", ".pac", ".sa"),
         output:
             temp("{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.unsorted.with_unmapped.bam"),
         log:
@@ -91,15 +91,15 @@ else:
     # bwa-mem2 (default)
     rule index_library_for_mapping_bwa_mem2:
         input:
-            "{species}/processed/dynamics/lib/{feature_library}_and_scg.suffixed.fasta"
+            "{species}/processed/dynamics/{feature_library}/library/{feature_library}_and_scg.suffixed.fasta"
         output:
-            "{species}/processed/dynamics/lib/{feature_library}_and_scg.suffixed.fasta.0123",
-            "{species}/processed/dynamics/lib/{feature_library}_and_scg.suffixed.fasta.amb",
-            "{species}/processed/dynamics/lib/{feature_library}_and_scg.suffixed.fasta.ann",
-            "{species}/processed/dynamics/lib/{feature_library}_and_scg.suffixed.fasta.bwt.2bit.64",
-            "{species}/processed/dynamics/lib/{feature_library}_and_scg.suffixed.fasta.pac",
+            "{species}/processed/dynamics/{feature_library}/library/{feature_library}_and_scg.suffixed.fasta.0123",
+            "{species}/processed/dynamics/{feature_library}/library/{feature_library}_and_scg.suffixed.fasta.amb",
+            "{species}/processed/dynamics/{feature_library}/library/{feature_library}_and_scg.suffixed.fasta.ann",
+            "{species}/processed/dynamics/{feature_library}/library/{feature_library}_and_scg.suffixed.fasta.bwt.2bit.64",
+            "{species}/processed/dynamics/{feature_library}/library/{feature_library}_and_scg.suffixed.fasta.pac",
         log:
-            "{species}/processed/dynamics/lib/{feature_library}_and_scg_bwa_index.log"
+            "{species}/processed/dynamics/{feature_library}/library/{feature_library}_and_scg_bwa_index.log"
         message: "Indexing SCG and Feature library {input} with BWA-MEM2"
         wrapper:
             "v9.3.0/bio/bwa-mem2/index"
@@ -107,7 +107,7 @@ else:
     rule map_reads_to_scg_feature_library_bwa_mem2:
         input:
             reads=["{species}/processed/reads/reads_merged/{individual}.fastq.gz"],
-            idx=multiext("{species}/processed/dynamics/lib/{feature_library}_and_scg.suffixed.fasta", ".amb", ".ann", ".bwt.2bit.64", ".pac", ".0123"),
+            idx=multiext("{species}/processed/dynamics/{feature_library}/library/{feature_library}_and_scg.suffixed.fasta", ".amb", ".ann", ".bwt.2bit.64", ".pac", ".0123"),
         output:
             temp("{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.sorted.with_unmapped.bam"),
         log:
@@ -126,7 +126,7 @@ rule remove_unmapped_reads_to_scg_feature_library:
     input:
         "{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.sorted.with_unmapped.bam"
     output:
-        bam=temp("{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.sorted.bam")
+        bam="{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.sorted.bam"
     message: "Removing unmapped reads from BAM file for {input}"
     params:
         extra="-b -F 4",
