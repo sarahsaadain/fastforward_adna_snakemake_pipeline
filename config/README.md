@@ -213,7 +213,7 @@ Optionally removes or extracts reads that did not map to the reference. Default:
 
 TE and genomic feature abundance analysis — maps to a combined SCG + feature library for depth-normalised comparisons.
 
-Place feature libraries in `{species}/raw/dynamics/feature_library/` and, optionally, a pre-built SCG FASTA in `{species}/raw/dynamics/scg/`. If no SCG FASTA is provided and `scg_selector.execute` is `true`, SCGs are determined automatically via BUSCO (requires a lineage configured per species).
+Place feature libraries in `{species}/raw/dynamics/feature_library/` and, optionally, a pre-built SCG FASTA in `{species}/raw/dynamics/scg/`. If no SCG FASTA is provided and `scg_selector.execute` is `true`, SCGs are determined automatically via BUSCO (requires a lineage configured per species). To use competitive mapping, place a single competition FASTA in `{species}/raw/dynamics/competition/`.
 
 #### `scg_selector`
 
@@ -247,6 +247,18 @@ Can also be used standalone (without feature libraries) to produce an SCG rankin
 | `settings.mapper` | `bwa-mem2` | Mapper for feature-library mapping. Same options as `reference_processing.mapping`. |
 | `settings.mapper_extra_params` | — | Optional extra parameters passed directly to the mapper. |
 | `settings.keep_mapped_bam` | `false` | When `true`, the filtered sorted BAM and its index (`{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.sorted.bam[.bai]`) are kept as permanent outputs and explicitly requested by the pipeline. When `false` (default), they are marked as temporary and deleted after SeqVista consumes them. Set to `true` to inspect the mapped BAM or to run the mapping step independently of SeqVista. |
+
+#### `competitive_mapping`
+
+Competitive mapping adds a competition FASTA to the combined reference (alongside SCG and feature library sequences) before mapping. Reads mapping to competition sequences are removed after mapping, so only SCG and feature library reads reach downstream analysis. This is useful for reducing false-positive mappings when reads originate from competing sources (e.g. a host genome fragment).
+
+To use competitive mapping, place exactly one FASTA file in `{species}/raw/dynamics/competition/`. The pipeline auto-discovers it — no path needs to be specified in the config.
+
+Competition sequences are internally suffixed with `_comp` to distinguish them from SCG (`_scg`) and feature library (`_fle`) sequences.
+
+| Setting | Default | Description |
+|---|---|---|
+| `settings.competitive_mapping` | `false` | When `true`, the FASTA in `{species}/raw/dynamics/competition/` is included in the combined reference. Reads mapping to `_comp` sequences are filtered out after mapping. |
 
 #### Other `dynamics` steps
 

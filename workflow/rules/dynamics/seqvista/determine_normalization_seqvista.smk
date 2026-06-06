@@ -2,6 +2,17 @@
 # Python helper functions for rules
 ####################################################
 
+_comp_execute = config.get("pipeline", {}).get("dynamics", {}).get("mapping", {}).get("settings", {}).get("competitive_mapping", False)
+
+
+def _seqvista_fasta_input(wildcards):
+    if _comp_execute:
+        return (f"{wildcards.species}/processed/dynamics/{wildcards.feature_library}/library/"
+                f"{wildcards.feature_library}_and_scg.no_comp.suffixed.fasta")
+    return (f"{wildcards.species}/processed/dynamics/{wildcards.feature_library}/library/"
+            f"{wildcards.feature_library}_and_scg.suffixed.fasta")
+
+
 def combine_seqvistas_for_species_input_coverage_files(wildcards):
     species = wildcards.species
     feature_library = wildcards.feature_library
@@ -33,7 +44,7 @@ def combine_seqvista_stats_across_feature_libraries_input(wildcards):
 rule determine_seqvista_of_individual_bam_to_so:
     input:
         bam="{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.sorted.bam",
-        fasta="{species}/processed/dynamics/{feature_library}/library/{feature_library}_and_scg.suffixed.fasta"
+        fasta=_seqvista_fasta_input
     output:
         coverage=temp("{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_coverage.tsv")
     log:

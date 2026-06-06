@@ -447,3 +447,32 @@ def get_effective_scg_library_path_for_species(species):
     if user_scgs:
         return user_scgs[0][1]
     return f"{species}/processed/dynamics/scg/{species}_relevant_scg.fasta"
+
+# -----------------------------------------------------------------------------------------------
+# Get the competition FASTA file for a species from {species}/raw/dynamics/competition/.
+# Returns None when no file is found (competitive mapping not configured).
+# Raises ValueError when more than one FASTA is found.
+def get_competition_fasta_for_species(species):
+    competition_folder = f"{species}/raw/dynamics/competition"
+    files = []
+    try:
+        logger.debug(f"Looking for competition FASTA in {competition_folder} for species {species}.")
+        files = get_files_in_folder_matching_pattern(competition_folder, "*.fna")
+        files += get_files_in_folder_matching_pattern(competition_folder, "*.fasta")
+        files += get_files_in_folder_matching_pattern(competition_folder, "*.fa")
+    except Exception as e:
+        logger.debug(f"No competition folder found for species {species}: {e}")
+        return None
+
+    if len(files) == 0:
+        logger.debug(f"No competition FASTA found for species {species}.")
+        return None
+
+    if len(files) > 1:
+        raise ValueError(
+            f"Multiple competition FASTA files found for species '{species}' in {competition_folder}. "
+            f"Please provide exactly one FASTA file: {files}"
+        )
+
+    logger.debug(f"Competition FASTA for species {species}: {files[0]}")
+    return files[0]

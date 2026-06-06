@@ -1129,6 +1129,13 @@
                 </label>
                 <label class="lbl" for="dyn_keep_mapped_bam">Keep mapped BAM &amp; index after mapping <span style="color:var(--text-muted);font-size:.75em">(default: off — deleted after SeqVista consumes them)</span></label>
               </div>
+              <div class="toggle-wrap" style="margin-top:8px">
+                <label class="toggle">
+                  <input type="checkbox" id="dyn_comp_mapping" onchange="render()">
+                  <span class="slider"></span>
+                </label>
+                <label class="lbl" for="dyn_comp_mapping">Enable competitive mapping <span style="color:var(--text-muted);font-size:.75em">(default: off — place a FASTA in <code>{species}/raw/dynamics/competition/</code>; sequences suffixed <code>_comp</code> are removed after mapping)</span></label>
+              </div>
             </div>
             </div><!-- /.adv-content -->
           </div>
@@ -1514,6 +1521,7 @@ function buildYAML() {
   kv(8, 'mapper', gv('dyn_mapper'));
   if (gb('dyn_xp_en') && gv('dyn_xp').trim()) kv(8, 'mapper_extra_params', gv('dyn_xp'));
   kv(8, 'keep_mapped_bam', gb('dyn_keep_mapped_bam'));
+  kv(8, 'competitive_mapping', gb('dyn_comp_mapping'));
   p(4, 'seqvista:');
   kv(6, 'execute', gb('sv_exec'));
   p(6, 'settings:');
@@ -1777,6 +1785,7 @@ function populateForm(c) {
   if (dym.mapper_extra_params !== undefined) { setOpt('dyn_xp_en','dyn_xp_body','dyn_xp_hdr',true); sv('dyn_xp',dym.mapper_extra_params); }
   else setOpt('dyn_xp_en','dyn_xp_body','dyn_xp_hdr',false);
   sb('dyn_keep_mapped_bam', dym.keep_mapped_bam);
+  sb('dyn_comp_mapping', dym.competitive_mapping);
   sb('sv_exec',  (dyn.seqvista||{}).execute);                     dot('sv_exec','d_sv');
   const svs = (dyn.seqvista||{}).settings||{};
   sv('sv_individual_plots', svs.individual_plots || 'plot');

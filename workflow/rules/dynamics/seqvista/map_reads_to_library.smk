@@ -8,9 +8,11 @@ _BWA_ALN_DEFAULTS    = "-n 0.01 -k 2 -l 1024 -o 2"  # Oliva et al. 2021 (10.1093
 _MINIMAP2_DEFAULTS   = "-ax sr"
 _dyn_mapper_extra    = _dyn_settings.get("mapper_extra_params", _BWA_ALN_DEFAULTS if _dyn_mapper == "bwa-aln" else (_MINIMAP2_DEFAULTS if _dyn_mapper == "minimap2" else ""))
 _dyn_keep_mapped_bam = _dyn_settings.get("keep_mapped_bam", False)
+_comp_execute        = config.get("pipeline", {}).get("dynamics", {}).get("mapping", {}).get("settings", {}).get("competitive_mapping", False)
 
 _MAPPED_BAM = "{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.sorted.bam"
 _MAPPED_BAI = _MAPPED_BAM + ".bai"
+_MAPPED_BAM_PRECOMP = "{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.sorted.precomp.bam"
 
 if _dyn_mapper == "minimap2":
     rule index_library_for_mapping_minimap2:
@@ -125,18 +127,54 @@ else:
         wrapper:
             "v9.3.0/bio/bwa-mem2/mem"
 
-# Rule: Remove unmapped reads
-rule remove_unmapped_reads_to_scg_feature_library:
-    input:
-        "{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.sorted.with_unmapped.bam"
-    output:
-        bam=_MAPPED_BAM if _dyn_keep_mapped_bam else temp(_MAPPED_BAM)
-    message: "Removing unmapped reads from BAM file for {input}"
-    params:
-        extra="-b -F 4",
-    threads: 2
-    wrapper:
-        "v9.3.0/bio/samtools/view"
+if _comp_execute:
+    # Rule: Remove unmapped reads — output is intermediate (competition filter follows)
+    rule remove_unmapped_reads_to_scg_feature_library:
+        input:
+            "{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.sorted.with_unmapped.bam"
+        output:
+            bam=temp(_MAPPED_BAM_PRECOMP)
+        message: "Removing unmapped reads from BAM file for {input}"
+        params:
+            extra="-b -F 4",
+        threads: 2
+        wrapper:
+            "v9.3.0/bio/samtools/view"
+
+    # Rule: Remove reads mapping to competition sequences (_comp suffix)
+    rule filter_competition_reads_from_bam:
+        input:
+            bam=_MAPPED_BAM_PRECOMP
+        output:
+            bam=_MAPPED_BAM if _dyn_keep_mapped_bam else temp(_MAPPED_BAM)
+        message: "Filtering competition sequences from BAM for {wildcards.individual}"
+        log:
+            "{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_filter_comp.log"
+        threads: 2
+        conda:
+            "../../../envs/samtools.yaml"
+        shell:
+            # Stream the BAM through awk to drop @SQ headers and alignment records for _comp references.
+            # No index needed because we process the stream linearly.
+            """
+            samtools view -h {input.bam} | \
+            awk '/^@SQ/ && $2~/^SN:.*_comp$/{{next}} /^@/{{print; next}} $3~/_comp$/{{next}} {{print}}' | \
+            samtools view -b > {output.bam} 2>{log}
+            """
+
+else:
+    # Rule: Remove unmapped reads — output is the final BAM
+    rule remove_unmapped_reads_to_scg_feature_library:
+        input:
+            "{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.sorted.with_unmapped.bam"
+        output:
+            bam=_MAPPED_BAM if _dyn_keep_mapped_bam else temp(_MAPPED_BAM)
+        message: "Removing unmapped reads from BAM file for {input}"
+        params:
+            extra="-b -F 4",
+        threads: 2
+        wrapper:
+            "v9.3.0/bio/samtools/view"
 
 # SAMTOOLS doesn't parallelize the indexing work — it only parallelizes compression/decompression.
 rule index_bam_reads_to_library:

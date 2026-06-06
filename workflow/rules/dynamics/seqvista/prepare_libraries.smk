@@ -2,6 +2,26 @@
 # Python helper functions for rules
 ####################################################
 
+_comp_execute = config.get("pipeline", {}).get("dynamics", {}).get("mapping", {}).get("settings", {}).get("competitive_mapping", False)
+
+
+def get_competition_fasta_input(wildcards):
+    path = get_competition_fasta_for_species(wildcards.species)
+    if not path:
+        raise ValueError(
+            f"pipeline.dynamics.mapping.competitive_mapping.execute is true, but no competition "
+            f"FASTA was found in '{wildcards.species}/raw/dynamics/competition/' for species "
+            f"'{wildcards.species}'. Place exactly one FASTA file there to use competitive mapping."
+        )
+    return path
+
+
+def _comp_library_input(wildcards):
+    if _comp_execute:
+        return f"{wildcards.species}/processed/dynamics/competition/competition.suffixed.fasta"
+    return []
+
+
 def clean_scg_library_name_input(wildcards):
     """
     Return the FASTA path for the SCG library: user-provided if available,
@@ -89,14 +109,40 @@ rule prepare_scg_library:
         sed -E '/^>/ s/[[:space:]]//g; /^>/ s/(_scg)?$/_scg/' {input} > {output}
         """
 
+if _comp_execute:
+    rule create_no_comp_library:
+        input:
+            "{species}/processed/dynamics/{feature_library}/library/{feature_library}_and_scg.suffixed.fasta"
+        output:
+            "{species}/processed/dynamics/{feature_library}/library/{feature_library}_and_scg.no_comp.suffixed.fasta"
+        message: "Removing competition sequences from combined library for SeqVista ({wildcards.species})"
+        shell:
+            # Skip any FASTA entry whose header ends in _comp (header + its sequence lines)
+            """
+            awk '/^>/{{skip=/_comp$/}} !skip' {input} > {output}
+            """
+
+    rule prepare_competition_library:
+        input:
+            get_competition_fasta_input
+        output:
+            temp("{species}/processed/dynamics/competition/competition.suffixed.fasta")
+        message: "Preparing competition library for {wildcards.species}"
+        shell:
+            # remove trailing whitespace from headers and append _comp to each header
+            """
+            sed -E '/^>/ s/[[:space:]]//g; /^>/ s/(_comp)?$/_comp/' {input} > {output}
+            """
+
 rule combine_scg_and_ref_library:
     input:
         scg=lambda wildcards: f"{wildcards.species}/processed/dynamics/scg/library/{get_effective_scg_library_id_for_species(wildcards.species)}.suffixed.fasta",
-        fl="{species}/processed/dynamics/{feature_library}/library/{feature_library}.suffixed.fasta"
+        fl="{species}/processed/dynamics/{feature_library}/library/{feature_library}.suffixed.fasta",
+        comp=_comp_library_input
     output:
         library="{species}/processed/dynamics/{feature_library}/library/{feature_library}_and_scg.suffixed.fasta"
     message: "Concatenating SCG and Feature libraries for {wildcards.species}"
     shell:
         """
-        cat {input.scg} {input.fl} > {output.library}
+        cat {input.scg} {input.fl} {input.comp} > {output.library}
         """

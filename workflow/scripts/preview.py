@@ -115,6 +115,17 @@ if workflow.exec_mode != ExecMode.SUBPROCESS:
                     except Exception as e:
                         lines.append(f"    SCG Libraries: (will be auto-determined via BUSCO [{_lineage}] — WARNING: {e})")
 
+        _comp_enabled = config.get("pipeline", {}).get("dynamics", {}).get("mapping", {}).get("settings", {}).get("competitive_mapping", False)
+        if _comp_enabled:
+            try:
+                comp_fasta = get_competition_fasta_for_species(sname)
+                if comp_fasta:
+                    lines.append(f"    Competition FASTA: {comp_fasta}")
+                else:
+                    lines.append(f"    Competition FASTA: (MISSING — place a FASTA in {sname}/raw/dynamics/competition/)")
+            except ValueError as e:
+                lines.append(f"    Competition FASTA: (ERROR — {e})")
+
         species_lines.append("\n".join(lines))
 
     logging.info("Detected species (%d):\n%s", len(species_section), "\n\n".join(species_lines))

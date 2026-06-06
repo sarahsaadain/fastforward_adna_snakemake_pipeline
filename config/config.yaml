@@ -187,6 +187,11 @@ pipeline:
         # When false (default), they are marked as temporary and deleted after SeqVista consumes them.
         # Set to true to inspect the BAM or to run the mapping step independently of SeqVista.
         keep_mapped_bam: false
+        # When true, competitive mapping is enabled: sequences from {species}/raw/dynamics/competition/
+        # are combined with the SCG and feature library before mapping. Competition sequences are
+        # suffixed with _comp, and reads mapping to them are removed after mapping — only SCG and
+        # feature library sequences are retained for downstream analysis. (Default: false)
+        competitive_mapping: false
 
     # ── SCG Selector ──────────────────────────────────────────────────────────
     # Automatically determines single-copy genes (SCGs) via BUSCO when no SCG
