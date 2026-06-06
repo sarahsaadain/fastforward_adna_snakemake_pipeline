@@ -280,6 +280,7 @@ Each entry under `species:` in the config corresponds to a species folder in the
 
 | Setting | Default | Description |
 |---|---|---|
+| `execute` | `true` | Whether to process this species. Set to `false` to skip all pipeline stages for this species without removing it from the config. Skipped species are listed in the startup preview log. |
 | `name` | — | Human-readable species name used in reports. |
 | `individuals` | *(all discovered)* | Optional list of individual IDs to process. Each ID must match the part of a read filename before the first `_` (e.g. `IND001` from `IND001_L001_R1.fastq.gz`). If omitted, all individuals discovered in `{species}/raw/reads/` are used. An error is raised if any listed ID is not found on disk. |
 | `references` | *(all discovered)* | Optional list of reference IDs to process. IDs are derived from filenames: basename without extension, dots replaced by underscores (e.g. `EquCab3.0.fna` → `EquCab3_0`). If omitted, all references in `{species}/raw/ref/` are used. An error is raised if any listed ID is not found on disk. |

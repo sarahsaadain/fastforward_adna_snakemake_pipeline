@@ -13,6 +13,9 @@ if workflow.exec_mode != ExecMode.SUBPROCESS:
     species_lines = []
     for sname, sdata in species_section.items():
         display_name = f"{sdata.get('name', sname)} [{sname}]"
+        if not sdata.get("execute", True):
+            species_lines.append(f"- {display_name} [SKIPPED — execute: false]")
+            continue
         lines = [f"- {display_name}"]
 
         try:

@@ -254,6 +254,10 @@
     .opt-body { margin-top: 10px; display: none; }
     .opt-body.open { display: block; }
 
+    /* ── Advanced content wrapper (step descriptions + settings) ── */
+    .adv-content { display: none; }
+    .adv-content.open { display: block; }
+
     /* ── Status dot ── */
     .sdot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; background: var(--disabled); }
     .sdot.on  { background: var(--primary-light); }
@@ -280,10 +284,25 @@
     /* ── Species ── */
     .species-row { display: block; margin-bottom: 10px; }
     .sp-main { display: flex; gap: 8px; align-items: center; }
-    .sp-scg { display: flex; gap: 6px; align-items: center; margin-top: 6px; padding-left: 2px; flex-wrap: wrap; }
+    .sp-scg { display: none; gap: 6px; align-items: center; margin-top: 6px; padding-left: 2px; flex-wrap: wrap; }
     .sp-scg .sp-scg-label { font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); white-space: nowrap; flex-shrink: 0; }
-    .sp-filters { display: flex; gap: 6px; align-items: center; margin-top: 4px; padding-left: 2px; flex-wrap: wrap; }
+    .sp-filters { display: none; gap: 6px; align-items: center; margin-top: 4px; padding-left: 2px; flex-wrap: wrap; }
     .sp-filters .sp-scg-label { font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); white-space: nowrap; flex-shrink: 0; }
+    .species-row-advanced .sp-scg { display: flex; }
+    .species-row-advanced .sp-filters { display: flex; }
+    .sp-adv-btn {
+      background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 4px;
+      cursor: pointer; padding: 4px 8px; color: var(--primary);
+      font-size: .65rem; line-height: 1; transition: transform .18s, background .12s, border-color .12s;
+      flex-shrink: 0; display: flex; align-items: center; font-weight: 600;
+    }
+    .sp-adv-btn:hover { background: #d4edda; border-color: var(--primary-light); }
+    .sp-adv-btn.open { transform: rotate(90deg); }
+    .sp-group-tag {
+      width: 100%; font-size: .6rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .06em; color: var(--primary); padding-bottom: 3px;
+      border-bottom: 1px solid #d1fae5; margin-bottom: 2px;
+    }
     .species-row input {
       flex: 1; padding: 7px 10px; border: 1px solid var(--border);
       border-radius: 6px; font-size: .82rem; background: var(--bg); font-family: inherit;
@@ -368,6 +387,7 @@
       </div>
       <div class="section-body open">
         <div style="display:flex;gap:8px;margin-bottom:6px;padding:0 2px;align-items:center">
+          <span style="width:38px;flex-shrink:0"></span>
           <span style="font-size:.65rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;width:90px;flex-shrink:0">Key</span>
           <span style="font-size:.65rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;flex:1">Display Name</span>
           <span style="width:28px;flex-shrink:0"></span>
@@ -377,11 +397,7 @@
         <p class="hint" style="margin-top:8px">
           <strong>Key</strong> = folder name and YAML map key (alphanumeric / underscore, no spaces). Must match the directory under the pipeline root.<br>
           <strong>Display Name</strong> = human-readable species name used in reports.<br>
-          <strong>BUSCO Lineage</strong> = required for SCG auto-determination (e.g. <code>drosophilidae_odb12</code>). Leave blank to skip SCG determination for this species. Browse lineages at <a href="https://busco.ezlab.org/" target="_blank">busco.ezlab.org</a>.<br>
-          <strong>Reference</strong> = optional explicit path to the reference FASTA for BUSCO. Only needed when multiple references exist in <code>{species}/raw/ref/</code>.<br>
-          <strong>Individuals</strong> = optional comma-separated list of individual IDs to process. If blank, all discovered individuals are used. An error is raised if any listed ID is not found on disk.<br>
-          <strong>References</strong> = optional comma-separated list of reference IDs to process (filename stem, dots → underscores, e.g. <code>EquCab3.0.fna</code> → <code>EquCab3_0</code>). If blank, all discovered references are used.<br>
-          <strong>Feature Libraries</strong> = optional comma-separated list of feature library IDs to use (same ID format as References). If blank, all discovered libraries are used.
+          Click <strong>&#9654;</strong> on a row to configure BUSCO lineage, reference path, and individual/reference/feature-library filters for that species.
         </p>
       </div>
     </div>
@@ -438,14 +454,16 @@
 
           <!-- Quality Analysis -->
           <div class="subsection">
-            <div class="subsection-header">
+            <div class="subsection-header clickable" onclick="toggleSub(this)">
               <span class="sdot on" id="d_qcr"></span>
               <span class="subsection-title">Quality Analysis</span>
               <label class="toggle" onclick="event.stopPropagation()">
                 <input type="checkbox" id="qcr_exec" checked onchange="dot('qcr_exec','d_qcr'); render()">
                 <span class="slider"></span>
               </label>
+              <span class="sub-chevron">&#9654;</span>
             </div>
+            <div class="adv-content">
             <div class="step-desc">
               <span class="tool-pill">FastQC</span><span class="tool-pill">MultiQC</span>
               Runs <strong>FastQC</strong> at each processing stage and aggregates results into a per-stage <strong>MultiQC</strong> HTML report. Individual stages can be toggled below.
@@ -486,6 +504,7 @@
                 <label class="lbl" for="rrp_create_plots">Generate read count plots</label>
               </div>
             </div>
+            </div><!-- /.adv-content -->
           </div>
 
           <!-- Adapter Removal -->
@@ -499,6 +518,7 @@
               </label>
               <span class="sub-chevron">&#9654;</span>
             </div>
+            <div class="adv-content">
             <div class="step-desc">
               <span class="tool-pill">fastp</span>
               Removes adapter sequences and enforces per-base quality and length thresholds.
@@ -557,6 +577,7 @@
                 </div>
               </div>
             </div>
+            </div><!-- /.adv-content -->
           </div>
 
           <!-- Quality Filtering -->
@@ -570,6 +591,7 @@
               </label>
               <span class="sub-chevron">&#9654;</span>
             </div>
+            <div class="adv-content">
             <div class="step-desc">
               <span class="tool-pill">fastp</span>
               A dedicated second fastp pass acting <strong>purely as a quality gate</strong> &mdash; adapter trimming is explicitly
@@ -591,6 +613,7 @@
                 </div>
               </div>
             </div>
+            </div><!-- /.adv-content -->
           </div>
 
           <!-- Contamination Analysis -->
@@ -604,6 +627,7 @@
               </label>
               <span class="sub-chevron">&#9654;</span>
             </div>
+            <div class="adv-content">
             <div class="step-desc">
               <span class="tool-pill green">ECMSD</span><span class="tool-pill green">Centrifuge</span>
               Both tools operate on <strong>quality-filtered reads</strong>. Each tool can be toggled independently.
@@ -728,6 +752,7 @@
                 </div>
               </div>
             </div>
+            </div><!-- /.adv-content -->
           </div>
 
 
@@ -764,6 +789,7 @@
               <span class="subsection-title">Mapping</span>
               <span class="sub-chevron">&#9654;</span>
             </div>
+            <div class="adv-content">
             <div class="step-desc">
               <span class="tool-pill">BWA</span><span class="tool-pill">samtools</span>
               Merged per-individual reads are mapped to the reference genome. Output is immediately
@@ -797,6 +823,7 @@
                 </div>
               </div>
             </div>
+            </div><!-- /.adv-content -->
           </div>
 
           <!-- Deduplication -->
@@ -810,6 +837,7 @@
               </label>
               <span class="sub-chevron">&#9654;</span>
             </div>
+            <div class="adv-content">
             <div class="step-desc">
               <span class="tool-pill purple">DeDup</span>
               Removes PCR and sequencing duplicates using <strong>DeDup</strong>, which is specifically designed for
@@ -833,18 +861,21 @@
                 <p class="hint">Default: 500. Lower values use less memory per cluster but increase runtime due to more merge operations. Reduce (e.g. to 100) only if deduplication is failing on a large, fragmented reference genome.</p>
               </div>
             </div>
+            </div><!-- /.adv-content -->
           </div>
 
           <!-- Damage Rescaling -->
           <div class="subsection">
-            <div class="subsection-header">
+            <div class="subsection-header clickable" onclick="toggleSub(this)">
               <span class="sdot on" id="d_dr"></span>
               <span class="subsection-title">Damage Rescaling</span>
               <label class="toggle" onclick="event.stopPropagation()">
                 <input type="checkbox" id="dr_exec" checked onchange="dot('dr_exec','d_dr'); render()">
                 <span class="slider"></span>
               </label>
+              <span class="sub-chevron">&#9654;</span>
             </div>
+            <div class="adv-content">
             <div class="step-desc">
               <span class="tool-pill orange">mapDamage2</span>
               Profiles <strong>cytosine deamination</strong> &mdash; the hallmark of ancient DNA &mdash; appearing as
@@ -856,6 +887,7 @@
               The rescaled BAM is sorted and indexed; the unsorted rescaled BAM is discarded.
               <div class="when-hint"><span class="def-pill on">Default: ON</span>Recommended for any analysis involving variant calling or genotyping — rescaling reduces the influence of damage-induced errors. Turn off if you want to inspect raw damage patterns before deciding, or if your downstream tools model damage explicitly and do not benefit from rescaled base qualities.</div>
             </div>
+            </div><!-- /.adv-content -->
           </div>
 
           <!-- Filter Unmapped Reads -->
@@ -869,6 +901,7 @@
               </label>
               <span class="sub-chevron">&#9654;</span>
             </div>
+            <div class="adv-content">
             <div class="step-desc">
               Optionally dispose of reads that did not map to the reference. Choose between writing a
               <strong>mapped-reads-only BAM</strong>, or extracting the unmapped reads to <strong>FASTQ.gz</strong>
@@ -886,18 +919,21 @@
                 </select>
               </div>
             </div>
+            </div><!-- /.adv-content -->
           </div>
 
           <!-- BAM Analysis -->
           <div class="subsection">
-            <div class="subsection-header">
+            <div class="subsection-header clickable" onclick="toggleSub(this)">
               <span class="sdot on" id="d_cov"></span>
               <span class="subsection-title">BAM Analysis</span>
               <label class="toggle" onclick="event.stopPropagation()">
                 <input type="checkbox" id="cov_exec" checked onchange="dot('cov_exec','d_cov'); render()">
                 <span class="slider"></span>
               </label>
+              <span class="sub-chevron">&#9654;</span>
             </div>
+            <div class="adv-content">
             <div class="step-desc">
               <span class="tool-pill">samtools</span><span class="tool-pill">Qualimap</span><span class="tool-pill">Preseq</span>
               <strong>samtools depth</strong> reports per-position depth across the entire reference including zero-coverage sites.
@@ -957,6 +993,7 @@
                 <label class="lbl" for="cov_samtools_stats">Include samtools stats in MultiQC reports</label>
               </div>
             </div>
+            </div><!-- /.adv-content -->
           </div>
 
         </div><!-- /#rp_body -->
@@ -997,6 +1034,7 @@
               </label>
               <span class="sub-chevron">&#9654;</span>
             </div>
+            <div class="adv-content">
             <div class="step-desc">
               <span class="tool-pill green">BUSCO</span>
               Automatically identifies <strong>single-copy genes (SCGs)</strong> from the reference genome via BUSCO when no user-provided SCG FASTA is placed in <code>{species}/raw/dynamics/scg/</code>. SCGs act as coverage normalisers for the Dynamics pipeline. Skipped automatically when a user-provided file is found <em>or</em> when no BUSCO lineage is configured for the species (set per species in the Species section above).
@@ -1043,6 +1081,7 @@
                 <span style="font-size:.68rem;color:var(--text-muted);margin-top:3px;display:block">Maximum sequence length for a BUSCO SCG to be included (Default: 8000; overridable per species)</span>
               </div>
             </div>
+            </div><!-- /.adv-content -->
           </div>
 
           <!-- Mapping -->
@@ -1051,6 +1090,7 @@
               <span class="subsection-title">Mapping</span>
               <span class="sub-chevron">&#9654;</span>
             </div>
+            <div class="adv-content">
             <div class="step-desc">
               <span class="tool-pill">BWA-MEM2</span>
               Merged per-individual reads are mapped to a <strong>combined reference</strong> consisting of
@@ -1090,6 +1130,7 @@
                 <label class="lbl" for="dyn_keep_mapped_bam">Keep mapped BAM &amp; index after mapping <span style="color:var(--text-muted);font-size:.75em">(default: off — deleted after SeqVista consumes them)</span></label>
               </div>
             </div>
+            </div><!-- /.adv-content -->
           </div>
 
           <!-- SeqVista -->
@@ -1103,6 +1144,7 @@
               </label>
               <span class="sub-chevron">&#9654;</span>
             </div>
+            <div class="adv-content">
             <div class="step-desc">
               <span class="tool-pill purple">SeqVista</span>
               Generates <strong>sequence overview (SO) profiles</strong> &mdash; per-position coverage, SNP, and indel
@@ -1179,6 +1221,7 @@
                 <span style="font-size:.68rem;color:var(--text-muted);margin-top:3px;display:block">Percentile used to exclude extreme coverage values from normalisation (Default: 25)</span>
               </div>
             </div>
+            </div><!-- /.adv-content -->
           </div>
 
         </div><!-- /#dyn_body -->
@@ -1204,33 +1247,34 @@
           <label class="lbl" for="sp_exec">Execute Summary Processing</label>
         </div>
         <p class="exec-note" style="margin-left:0;padding-left:0"><span class="def-pill on">Default: ON</span>Generates the final MultiQC HTML reports. There is rarely a reason to turn this off — it is the primary deliverable of the pipeline. Only disable if you are running a partial test and do not need consolidated reports yet.</p>
-        <p style="font-size:.78rem;color:var(--text-muted);line-height:1.55">
-          Produces two levels of <strong>MultiQC</strong> HTML reports:
-        </p>
-        <ul style="font-size:.78rem;color:var(--text-muted);line-height:1.8;margin:8px 0 0 18px">
-          <li><strong>Per-individual</strong> &mdash; all QC and analytics for one individual across all references<br>
-            <code style="font-size:.68rem">{species}/results/summary/individual_level/{individual}_multiqc.html</code></li>
-          <li><strong>Per-species</strong> &mdash; all individuals aggregated for cross-sample comparison<br>
-            <code style="font-size:.68rem">{species}/results/summary/species_level/{species}_multiqc.overall.html</code></li>
-        </ul>
-        <p style="font-size:.78rem;color:var(--text-muted);line-height:1.55;margin-top:8px">
-          Only outputs from <em>enabled</em> steps are included &mdash; disabled steps are silently omitted,
-          keeping the report self-consistent. Qualimap and mapDamage2 output directories are copied into the
-          summary folder structure before report generation.
-        </p>
-        <div class="toggle-wrap" style="margin-top:10px">
-          <label class="toggle">
-            <input type="checkbox" id="sp_individual" checked onchange="render()">
-            <span class="slider"></span>
-          </label>
-          <label class="lbl" for="sp_individual">Per-individual MultiQC summary report</label>
-        </div>
-        <div class="toggle-wrap" style="margin-top:6px">
-          <label class="toggle">
-            <input type="checkbox" id="sp_species" checked onchange="render()">
-            <span class="slider"></span>
-          </label>
-          <label class="lbl" for="sp_species">Per-species MultiQC summary report (all individuals)</label>
+        <div class="opt-group" style="margin-top:10px">
+          <div class="opt-header" id="sp_cfg_hdr">
+            <input type="checkbox" id="sp_cfg_en" onchange="optToggle('sp_cfg_en','sp_cfg_body','sp_cfg_hdr')">
+            <label for="sp_cfg_en">Configure report types</label>
+          </div>
+          <div class="opt-body" id="sp_cfg_body">
+            <p style="font-size:.78rem;color:var(--text-muted);line-height:1.55;margin-bottom:8px">
+              Produces two levels of <strong>MultiQC</strong> HTML reports:
+            </p>
+            <ul style="font-size:.78rem;color:var(--text-muted);line-height:1.8;margin:0 0 8px 18px">
+              <li><strong>Per-individual</strong> &mdash; all QC and analytics for one individual across all references</li>
+              <li><strong>Per-species</strong> &mdash; all individuals aggregated for cross-sample comparison</li>
+            </ul>
+            <div class="toggle-wrap" style="margin-top:8px">
+              <label class="toggle">
+                <input type="checkbox" id="sp_individual" checked onchange="render()">
+                <span class="slider"></span>
+              </label>
+              <label class="lbl" for="sp_individual">Per-individual MultiQC summary report</label>
+            </div>
+            <div class="toggle-wrap" style="margin-top:6px">
+              <label class="toggle">
+                <input type="checkbox" id="sp_species" checked onchange="render()">
+                <span class="slider"></span>
+              </label>
+              <label class="lbl" for="sp_species">Per-species MultiQC summary report (all individuals)</label>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1261,10 +1305,8 @@ function toggleSec(hdr) {
 
 function toggleSub(hdr) {
   hdr.classList.toggle('open');
-  const body = hdr.nextElementSibling;
-  // skip the step-desc div, find subsection-body
-  let el = body;
-  while (el && !el.classList.contains('subsection-body')) el = el.nextElementSibling;
+  let el = hdr.nextElementSibling;
+  while (el && !el.classList.contains('adv-content')) el = el.nextElementSibling;
   if (el) el.classList.toggle('open');
 }
 
@@ -1295,30 +1337,38 @@ function mapperInfo(selId, infoId) {
 /* ─── Species rows ─── */
 let speciesSeq = 0;
 
-function addSpecies(key='', name='', lineage='', ref='', individuals='', references='', featureLibs='') {
+function addSpecies(key='', name='', lineage='', ref='', individuals='', references='', featureLibs='', exec=true) {
   const id = speciesSeq++;
+  const hasAdv = !!(lineage || ref || individuals || references || featureLibs);
   const row = document.createElement('div');
-  row.className = 'species-row';
+  row.className = 'species-row' + (hasAdv ? ' species-row-advanced' : '');
   row.dataset.id = id;
   row.innerHTML = `
     <div class="sp-main">
+      <label class="toggle" style="flex-shrink:0" title="Execute this species">
+        <input type="checkbox" class="sp-exec" ${exec ? 'checked' : ''} oninput="render()">
+        <span class="slider"></span>
+      </label>
       <input type="text" class="sp-key"  placeholder="e.g. Dmel"      value="${esc(key)}"  oninput="render()" style="max-width:90px">
       <input type="text" class="sp-name" placeholder="e.g. Dmel Demo" value="${esc(name)}" oninput="render()">
+      <button class="sp-adv-btn${hasAdv ? ' open' : ''}" onclick="const r=this.closest('.species-row'); r.classList.toggle('species-row-advanced'); this.classList.toggle('open');" title="Advanced settings">&#9654;</button>
       <button class="btn-rm" onclick="this.closest('.species-row').remove(); render()" title="Remove">&#215;</button>
     </div>
-    <div class="sp-scg">
-      <span class="sp-scg-label">BUSCO Lineage</span>
-      <input type="text" class="sp-lineage" placeholder="e.g. drosophilidae_odb12" value="${esc(lineage)}" oninput="render()" style="flex:1;min-width:160px">
-      <span class="sp-scg-label" style="margin-left:8px">Reference</span>
-      <input type="text" class="sp-ref" placeholder="optional: /path/to/ref.fasta" value="${esc(ref)}" oninput="render()" style="flex:2;min-width:160px">
-    </div>
     <div class="sp-filters">
+      <span class="sp-group-tag">Filters</span>
       <span class="sp-scg-label">Individuals</span>
       <input type="text" class="sp-individuals" placeholder="optional: IND001, IND002" value="${esc(individuals)}" oninput="render()" style="flex:2;min-width:160px">
       <span class="sp-scg-label" style="margin-left:8px">References</span>
       <input type="text" class="sp-references" placeholder="optional: genome, ref2" value="${esc(references)}" oninput="render()" style="flex:2;min-width:160px">
       <span class="sp-scg-label" style="margin-left:8px">Feature Libraries</span>
       <input type="text" class="sp-feature-libs" placeholder="optional: lib1, lib2" value="${esc(featureLibs)}" oninput="render()" style="flex:2;min-width:160px">
+    </div>
+    <div class="sp-scg">
+      <span class="sp-group-tag">SCG &amp; Dynamics</span>
+      <span class="sp-scg-label">BUSCO Lineage</span>
+      <input type="text" class="sp-lineage" placeholder="e.g. drosophilidae_odb12" value="${esc(lineage)}" oninput="render()" style="flex:1;min-width:160px">
+      <span class="sp-scg-label" style="margin-left:8px">Reference</span>
+      <input type="text" class="sp-ref" placeholder="optional: /path/to/ref.fasta" value="${esc(ref)}" oninput="render()" style="flex:2;min-width:160px">
     </div>
   `;
   document.getElementById('species-list').appendChild(row);
@@ -1490,6 +1540,7 @@ function buildYAML() {
   document.querySelectorAll('#species-list .species-row').forEach(row => {
     const k          = row.querySelector('.sp-key').value.trim();
     const n          = row.querySelector('.sp-name').value.trim();
+    const exec       = row.querySelector('.sp-exec').checked;
     const lineage    = row.querySelector('.sp-lineage').value.trim();
     const ref        = row.querySelector('.sp-ref').value.trim();
     const individuals  = row.querySelector('.sp-individuals').value.trim();
@@ -1497,6 +1548,7 @@ function buildYAML() {
     const featureLibs  = row.querySelector('.sp-feature-libs').value.trim();
     if (!k) return;
     p(2, `${k}:`);
+    kv(4, 'execute', exec);
     kv(4, 'name', n);
     pList(4, 'individuals', individuals);
     pList(4, 'references', references);
@@ -1753,7 +1805,7 @@ function populateForm(c) {
     const individuals = (sv2.individuals || []).join(', ');
     const references  = (sv2.references  || []).join(', ');
     const featureLibs = (sv2.feature_libraries || []).join(', ');
-    addSpecies(k, sv2.name||'', scgSelSettings.lineage||'', scgSel.reference||'', individuals, references, featureLibs);
+    addSpecies(k, sv2.name||'', scgSelSettings.lineage||'', scgSel.reference||'', individuals, references, featureLibs, sv2.execute !== false);
   });
   if (!Object.keys(species).length) addSpecies('demo','Dmel Demo');
   render();

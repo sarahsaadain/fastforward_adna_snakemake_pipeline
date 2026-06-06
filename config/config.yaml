@@ -262,6 +262,10 @@ pipeline:
 species:
   # Settings for the demo species
   demo:
+    # Whether to process this species (Default: true).
+    # Set to false to skip all pipeline stages for this species without removing it from the config.
+    execute: true
+
     # Name of the species
     name: "Dmel Demo"
 
