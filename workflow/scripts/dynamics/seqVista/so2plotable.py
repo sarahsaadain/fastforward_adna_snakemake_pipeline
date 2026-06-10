@@ -4,6 +4,7 @@ import logging
 import os
 from modules import PlotableFormater, SeqEntryReader, Writer, load_bed
 from version import __version__
+import re
 
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -20,6 +21,10 @@ def format_col(topr:list):
             tf.append("")
     return "\t".join(tf)
 
+def sanitize_filename(filename: str, replacement: str = "_") -> str:
+    filename = re.sub(r'[^\w\-.]', replacement, filename)
+    filename = re.sub(rf'{re.escape(replacement)}+', replacement, filename)
+    return filename.strip(replacement)
 
 parser = argparse.ArgumentParser(description="""
 converts sequence overview (so) files to plottable format
@@ -77,10 +82,7 @@ for se in SeqEntryReader(args.so):
         tp = "\n".join(tr)
 
         if args.outputdir is not None:
-            filename = se.seqname
-            filename = filename.replace("/", "_")
-            filename = filename.replace(" ", "_")
-            filename = prefix + filename + ".plotable"
+            filename = prefix + sanitize_filename(se.seqname) + ".plotable"
             full_path = os.path.join(args.outputdir, filename)
             with open(full_path, "w") as f:
                 f.write(tp)

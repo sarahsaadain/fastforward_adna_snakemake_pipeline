@@ -6,11 +6,13 @@ _comp_execute = config.get("pipeline", {}).get("dynamics", {}).get("mapping", {}
 
 
 def _seqvista_fasta_input(wildcards):
+
+    species = wildcards.species
+    feature_library = wildcards.feature_library
+
     if _comp_execute:
-        return (f"{wildcards.species}/processed/dynamics/{wildcards.feature_library}/library/"
-                f"{wildcards.feature_library}_and_scg.no_comp.suffixed.fasta")
-    return (f"{wildcards.species}/processed/dynamics/{wildcards.feature_library}/library/"
-            f"{wildcards.feature_library}_and_scg.suffixed.fasta")
+        return (f"{species}/processed/dynamics/{feature_library}/library/{feature_library}_and_scg.no_comp.suffixed.fasta")
+    return (f"{species}/processed/dynamics/{feature_library}/library/{feature_library}_and_scg.suffixed.fasta")
 
 
 def combine_seqvistas_for_species_input_coverage_files(wildcards):
