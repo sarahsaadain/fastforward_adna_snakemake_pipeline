@@ -152,8 +152,8 @@ Both tools operate on quality-filtered reads and can be toggled independently.
 | Setting | Default | Description |
 |---|---|---|
 | `tools.ecmsd.settings.database` | — | Path to the ECMSD database folder. If omitted, the pipeline auto-creates a database at `resources/ecmsd_database` via `ECMSD --create-db`. |
-| `tools.ecmsd.settings.Binsize` | `1000` | Reference genome bin size for coverage calculation. |
-| `tools.ecmsd.settings.RMUS_threshold` | `0.15` | Minimum Relative Mapping Uniqueness Score for a taxon to be reported. |
+| `tools.ecmsd.settings.cov_threshold` | `50` | Minimum % of reference covered by reads to retain it. |
+| `tools.ecmsd.settings.top_n` | `25` | Number of top references to generate alignment plots for. |
 | `tools.ecmsd.settings.mapping_quality` | `20` | Minimum mapping quality score to include a read. |
 | `tools.ecmsd.settings.taxonomic_hierarchy` | `species` | Taxonomic level at which to aggregate and report results. Options: `species`, `genus`, `family`, `order`. |
 
@@ -372,10 +372,10 @@ pipeline:
           settings:
             # Optional: path to ECMSD database folder (auto-created if not set)
             #database: "resources/ecmsd_database"
-            # Bin size for coverage calculation (Default: 1000)
-            Binsize: 1000
-            # Minimum RMUS for a taxon to be reported (Default: 0.15)
-            RMUS_threshold: 0.15
+            # Minimum % of reference covered by reads to retain it (Default: 50)
+            cov_threshold: 50
+            # Number of top references to generate alignment plots for (Default: 25)
+            top_n: 25
             # Minimum mapping quality to include a read (Default: 20)
             mapping_quality: 20
             # Taxonomic level for results: "species" (default), "genus", "family", "order"

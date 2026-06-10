@@ -647,7 +647,7 @@
                 </div>
                 <p style="font-size:.72rem;color:var(--text-muted);line-height:1.5">
                   Maps reads against a curated <strong>mitochondrial reference database</strong> and reports the proportional
-                  contribution of different taxa. Configurable binning resolution, RMUS threshold, mapping quality cutoff,
+                  contribution of different taxa. Configurable coverage threshold, top-N plot count, mapping quality cutoff,
                   and taxonomic level (default: species). Per-sample results are merged per individual.
                   <div class="when-hint"><span class="def-pill on">Default: ON</span>Turn off if ECMSD is not installed or configured on your system. Well-suited for vertebrate aDNA where mitochondrial contamination is the primary concern.</div>
                 </p>
@@ -673,14 +673,14 @@
                   </div>
                   <div class="opt-body" id="ca_ecmsd_adv_body">
                     <div class="field" style="margin-top:8px">
-                      <label>Bin size</label>
-                      <input type="number" id="ca_ecmsd_binsize" value="1000" min="1" oninput="render()">
-                      <p class="hint">Default: 1000. Reference genome bin size for coverage calculation.</p>
+                      <label>Coverage threshold (%)</label>
+                      <input type="number" id="ca_ecmsd_cov_threshold" value="50" min="0" max="100" oninput="render()">
+                      <p class="hint">Default: 50. Minimum % of reference covered by reads to retain it.</p>
                     </div>
                     <div class="field">
-                      <label>RMUS threshold</label>
-                      <input type="number" id="ca_ecmsd_rmus" value="0.15" min="0" max="1" step="0.01" oninput="render()">
-                      <p class="hint">Default: 0.15. Minimum Relative Mapping Uniqueness Score for a taxon to be reported.</p>
+                      <label>Top N</label>
+                      <input type="number" id="ca_ecmsd_top_n" value="25" min="1" oninput="render()">
+                      <p class="hint">Default: 25. Number of top references to generate alignment plots for.</p>
                     </div>
                     <div class="field">
                       <label>Mapping quality</label>
@@ -1458,8 +1458,8 @@ function buildYAML() {
     p(10, 'settings:');
     if (gb('ca_ecmsd_db_en') && gv('ca_ecmsd_db').trim()) kv(12, 'database', gv('ca_ecmsd_db'));
     if (gb('ca_ecmsd_adv_en')) {
-      kv(12, 'binsize', gn('ca_ecmsd_binsize'));
-      kv(12, 'rmus_threshold', parseFloat(gv('ca_ecmsd_rmus')));
+      kv(12, 'cov_threshold', gn('ca_ecmsd_cov_threshold'));
+      kv(12, 'top_n', gn('ca_ecmsd_top_n'));
       kv(12, 'mapping_quality', gn('ca_ecmsd_mq'));
       kv(12, 'taxonomic_hierarchy', gv('ca_ecmsd_taxhier'));
     }
@@ -1731,10 +1731,10 @@ function populateForm(c) {
   sb('ca_ecmsd_exec', ecmsd_tool.execute);
   if (ecmsd_s.database !== undefined) { setOpt('ca_ecmsd_db_en','ca_ecmsd_db_body','ca_ecmsd_db_hdr',true); sv('ca_ecmsd_db',ecmsd_s.database); }
   else setOpt('ca_ecmsd_db_en','ca_ecmsd_db_body','ca_ecmsd_db_hdr',false);
-  if (ecmsd_s.binsize !== undefined || ecmsd_s.rmus_threshold !== undefined || ecmsd_s.mapping_quality !== undefined || ecmsd_s.taxonomic_hierarchy !== undefined) {
+  if (ecmsd_s.cov_threshold !== undefined || ecmsd_s.top_n !== undefined || ecmsd_s.mapping_quality !== undefined || ecmsd_s.taxonomic_hierarchy !== undefined) {
     setOpt('ca_ecmsd_adv_en','ca_ecmsd_adv_body','ca_ecmsd_adv_hdr',true);
-    if (ecmsd_s.binsize !== undefined) sv('ca_ecmsd_binsize', ecmsd_s.binsize);
-    if (ecmsd_s.rmus_threshold !== undefined) sv('ca_ecmsd_rmus', ecmsd_s.rmus_threshold);
+    if (ecmsd_s.cov_threshold !== undefined) sv('ca_ecmsd_cov_threshold', ecmsd_s.cov_threshold);
+    if (ecmsd_s.top_n !== undefined) sv('ca_ecmsd_top_n', ecmsd_s.top_n);
     if (ecmsd_s.mapping_quality !== undefined) sv('ca_ecmsd_mq', ecmsd_s.mapping_quality);
     if (ecmsd_s.taxonomic_hierarchy !== undefined) sv('ca_ecmsd_taxhier', ecmsd_s.taxonomic_hierarchy);
   } else setOpt('ca_ecmsd_adv_en','ca_ecmsd_adv_body','ca_ecmsd_adv_hdr',false);

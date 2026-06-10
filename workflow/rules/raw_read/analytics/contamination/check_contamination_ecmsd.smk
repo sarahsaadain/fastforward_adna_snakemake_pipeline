@@ -42,14 +42,14 @@ rule ecmsd_analyze_contamination:
     output:
         summary                         = "{species}/results/contamination_analysis/ecmsd/{individual}/{sample}/mapping/{sample}_Mito_summary.txt",
         paf                             = "{species}/results/contamination_analysis/ecmsd/{individual}/{sample}/mapping/{sample}_Mito.paf.gz",
-        RMUS                            = "{species}/results/contamination_analysis/ecmsd/{individual}/{sample}/mapping/{sample}_Mito_summary.RMUS.txt",
+        coverage                        = "{species}/results/contamination_analysis/ecmsd/{individual}/{sample}/mapping/{sample}_Mito_coverage.txt",
         tax_hierarchy_proportions       = _ecmsd_tax_hierarchy_proportions_txt_output,
         tax_hierarchy_summary           = _ecmsd_tax_hierarchy_summary_txt_output,
         tax_hierarchy_readlength        = _ecmsd_tax_hierarchy_readlength_output,
         tax_hierarchy_proportions_png   = _ecmsd_tax_hierarchy_proportions_png_output,
     params:
-        binsize = config.get("pipeline", {}).get("raw_reads_processing", {}).get("contamination_analysis", {}).get("tools", {}).get("ecmsd", {}).get("settings", {}).get("binsize", 1000),
-        rmus_threshold = config.get("pipeline", {}).get("raw_reads_processing", {}).get("contamination_analysis", {}).get("tools", {}).get("ecmsd", {}).get("settings", {}).get("rmus_threshold", 0.15),
+        cov_threshold = config.get("pipeline", {}).get("raw_reads_processing", {}).get("contamination_analysis", {}).get("tools", {}).get("ecmsd", {}).get("settings", {}).get("cov_threshold", 50),
+        top_n = config.get("pipeline", {}).get("raw_reads_processing", {}).get("contamination_analysis", {}).get("tools", {}).get("ecmsd", {}).get("settings", {}).get("top_n", 25),
         mapping_quality = config.get("pipeline", {}).get("raw_reads_processing", {}).get("contamination_analysis", {}).get("tools", {}).get("ecmsd", {}).get("settings", {}).get("mapping_quality", 20),
         taxonomic_hierarchy = config.get("pipeline", {}).get("raw_reads_processing", {}).get("contamination_analysis", {}).get("tools", {}).get("ecmsd", {}).get("settings", {}).get("taxonomic_hierarchy", "species"),
         prefix = "{sample}"
@@ -71,8 +71,8 @@ rule ecmsd_analyze_contamination:
             --out "$outdir" \
             --threads {threads} \
             --prefix {params.prefix} \
-            --binsize {params.binsize} \
-            --RMUS-threshold {params.rmus_threshold} \
+            --cov-threshold {params.cov_threshold} \
+            --top-n {params.top_n} \
             --mapping_quality {params.mapping_quality} \
             --taxonomic-hierarchy {params.taxonomic_hierarchy} \
             --db-folder {input.database} \
