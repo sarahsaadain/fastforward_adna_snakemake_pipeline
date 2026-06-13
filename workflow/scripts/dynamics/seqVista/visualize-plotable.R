@@ -1,10 +1,12 @@
-# Rscript visualize-plotable.R input.plotable output.png [--log]
+# Rscript visualize-plotable.R input.plotable output.png [--log] [--log=N] [--ymax=N] [--bin=N]
 suppressPackageStartupMessages({
-  library(tidyverse)  
+  library(tidyverse)
 })
 debug=FALSE
 log_scale=FALSE
 log_auto_threshold=NULL
+y_max_override=NULL
+bin_size=1L
 
 if(!debug)
 {
@@ -12,7 +14,21 @@ if(!debug)
 
     # detect --log flag or --log=N threshold
     log_arg <- args[grepl("^--log", args)]
-    args    <- args[!grepl("^--log", args)]   # remove from positional args
+    args    <- args[!grepl("^--log", args)]
+
+    # detect --ymax=N
+    ymax_arg <- args[grepl("^--ymax=", args)]
+    args     <- args[!grepl("^--ymax=", args)]
+    if (length(ymax_arg) > 0) {
+      y_max_override <- as.numeric(sub("^--ymax=", "", ymax_arg[1]))
+    }
+
+    # detect --bin=N (bin coverage into N-position windows to speed up plotting of long sequences)
+    bin_arg <- args[grepl("^--bin=", args)]
+    args    <- args[!grepl("^--bin=", args)]
+    if (length(bin_arg) > 0) {
+      bin_size <- as.integer(sub("^--bin=", "", bin_arg[1]))
+    }
 
     if (length(log_arg) > 0) {
       if (grepl("^--log=", log_arg[1])) {
@@ -25,7 +41,7 @@ if(!debug)
     }
 
     if (length(args) < 2) {
-      cat("Please provide an input file and an output file;\nUsage: Rscript visualize-plotable.R input.plotable output.png [--log] [--log=N]")
+      cat("Please provide an input file and an output file;\nUsage: Rscript visualize-plotable.R input.plotable output.png [--log] [--log=N] [--ymax=N]")
       quit("no", 1)
     }
 
@@ -82,6 +98,22 @@ insertion <- data |> filter(X3=="ins")
 insertion <- insertion |> rename(seqid=X1,sampleid=X2,feature=X3,pos=X4,length=X5,count=X6) 
 insertion <- insertion |> mutate(pos = as.double(pos), length= as.double(length), count= as.double(count))
 
+# bin coverage into N-position windows if requested (speeds up rendering for long sequences)
+if (bin_size > 1L) {
+  bin_cov <- function(df, y_col) {
+    df |>
+      mutate(bin = as.integer((pos - 1L) %/% bin_size)) |>
+      group_by(seqid, sampleid, feature, bin) |>
+      summarise(pos  = first(bin) * bin_size + bin_size %/% 2L + 1L,
+                !!y_col := mean(.data[[y_col]], na.rm = TRUE),
+                .groups = "drop") |>
+      select(-bin)
+  }
+  cov    <- bin_cov(cov,    "covy")
+  ambcov <- bin_cov(ambcov, "ambcovy")
+  mcov   <- bin_cov(mcov,   "mcovy")
+}
+
 # filter minimum deletion size and scale by count
 deletion <- deletion |> filter(end - start > mindeletion)
 deletion$scale = log(deletion$count)
@@ -137,7 +169,7 @@ if (log_scale) {
                  aes(x = pos, xend = pos, y = 0, yend = log10(count + 1)),
                  color = "grey50", linewidth = 0.5)
 
-  max_y  <- ceiling(max(cov$covy, na.rm = TRUE))
+  max_y  <- if (!is.null(y_max_override)) log10(y_max_override + 1) else ceiling(max(cov$covy, na.rm = TRUE))
   fixed_vals   <- c(0, 1, 2, 5, 10, 50, 100, 1000, 5000, 10000, 100000, 1000000)
   fixed_breaks <- log10(fixed_vals + 1)
   
@@ -152,10 +184,10 @@ if (log_scale) {
   })
 
   plo <- plo +
-    scale_y_continuous(breaks = breaks, labels = labels, 
-                       limits = c(0, max_y), 
+    scale_y_continuous(breaks = breaks, labels = labels,
                        expand = expansion(mult = c(0, 0.01))) +
-    ylab("coverage (log10)") 
+    coord_cartesian(ylim = c(0, max_y)) +
+    ylab("coverage (log10)")
 
 } else {
   snp_stacked_lin <- snp |>
@@ -173,6 +205,10 @@ if (log_scale) {
     geom_bar(data = insertion, aes(x = pos, y = count),
              stat = "identity", color = "grey50", width = 4) +
     scale_y_continuous(expand = expansion(mult = c(0, 0.05)))
+
+  if (!is.null(y_max_override)) {
+    plo <- plo + coord_cartesian(ylim = c(0, y_max_override))
+  }
 
 }
 
@@ -208,7 +244,7 @@ if (nplots>1) {
 }
 
 if(!debug){
-  ggsave(outfile, plot = plo, width = width, height = height, dpi = dpi, , limitsize = FALSE)
+  ggsave(outfile, plot = plo, width = width, height = height, dpi = dpi, limitsize = FALSE)
 }else{
   plot(plo)
 }

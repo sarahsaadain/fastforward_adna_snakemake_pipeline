@@ -119,11 +119,14 @@ rule prepare_seqvista_visualization_of_individual:
         "../../../envs/python_and_r.yaml"
     message:
         "Preparing seqvista visualization for {wildcards.individual} of {wildcards.species}."
+    params:
+        bin_size = lambda _: config.get("pipeline", {}).get("dynamics", {}).get("seqvista", {}).get("settings", {}).get("visualization_bin_size", "target:10000")
     shell:
         """
         python workflow/scripts/dynamics/seqvista/so2plotable.py \
             --so {input.coverage} \
             --outdir {output.plotable} \
+            --bin-size {params.bin_size} \
             --seq-ids ALL \
             --sample-id {wildcards.individual}
         """
@@ -139,7 +142,7 @@ rule calculate_seqvista_normalized_stats_of_individual:
         "Calculating normalized stats for {wildcards.individual} of {wildcards.species}."
     shell:
         """
-        python workflow/scripts/dynamics/seqvista/so2stats.py \
+        python workflow/scripts/dynamics/seqvista/so2covstats.py \
             --so {input.coverage} \
             --outfile {output.stats} \
             --sample-id {wildcards.individual}
@@ -160,7 +163,7 @@ rule compare_seqvista_stats_accross_individuals_of_species:
         "Running seqvista for {wildcards.species}."
     shell:
         """
-        python workflow/scripts/dynamics/seqvista/compare_stats.py --stats {input} --outfile {output.stats}
+        python workflow/scripts/dynamics/seqvista/compare_covstats.py --stats {input} --outfile {output.stats}
         """
 
 rule combine_seqvista_stats_across_feature_libraries:
@@ -196,7 +199,7 @@ rule run_seqvista_visualization_of_individual:
         "Running seqvista visualization for {wildcards.individual} of {wildcards.species}."
     shell:
         """
-        python workflow/scripts/dynamics/seqvista/run_plotable.py --folder {input} --outdir {output}  --log {params.log_threshhold}  --threads {threads}
+        python workflow/scripts/dynamics/seqvista/plot.py --folder {input} --outdir {output}  --log {params.log_threshhold}  --threads {threads}
         """
 
 rule run_seqvista_visualization_of_species:
@@ -218,7 +221,7 @@ rule run_seqvista_visualization_of_species:
         "Running seqvista visualization for {wildcards.species}."
     shell:
         """
-        python workflow/scripts/dynamics/seqvista/run_plotable.py --folders {input} --outdir {output.plots} --merged-dir {output.merged} --log {params.log_threshhold} --threads {threads}
+        python workflow/scripts/dynamics/seqvista/plot.py --folders {input} --outdir {output.plots} --merged-dir {output.merged} --log {params.log_threshhold} --threads {threads}
         """
 
 rule compress_seqvista_coverage_of_individual:

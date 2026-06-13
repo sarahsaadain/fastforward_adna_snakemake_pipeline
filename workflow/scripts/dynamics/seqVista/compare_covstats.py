@@ -2,7 +2,7 @@
 """
 Compare per-sequence stats across samples and flag sequences of interest.
 
-Input is two or more .stats.tsv files produced by so2stats.py.
+Input is two or more .covstats.tsv files produced by so2covstats.py.
 Output has one row per sequence with per-sample columns side by side,
 cross-sample metrics, and flags.
 
@@ -17,16 +17,17 @@ A sequence is flagged if ANY flag applies. Multiple flags are pipe-separated.
 
 Usage
 -----
-    python compare_stats.py --stats s1.stats.tsv s2.stats.tsv --cn-fc 1.0 --cn-abs 10
+    SeqVista compare --stats s1.covstats.tsv s2.covstats.tsv --cn-fc 1.0 --cn-abs 10
 
-    python compare_stats.py --stats *.stats.tsv --cn-fc 1.0 --cn-abs 10 --outfile results.tsv
+    SeqVista compare --stats *.covstats.tsv --cn-fc 1.0 --cn-abs 10 --outfile results.tsv
 
     # only show flagged sequences in terminal and output
-    python compare_stats.py --stats *.stats.tsv --cn-fc 1.0 --cn-abs 10 --flagged-only
+    SeqVista compare --stats *.covstats.tsv --cn-fc 1.0 --cn-abs 10 --flagged-only
 
 Authors
 -------
-    (adapted from run_plotable.py structure by Robert Kofler / Sarah Saadain)
+    Robert Kofler
+    Sarah Saadain
 """
 
 import argparse
@@ -51,7 +52,7 @@ PER_SAMPLE_COLS = [
 
 def load_stats(files: list[Path]) -> pd.DataFrame:
     """
-    Load and concatenate stats TSVs produced by so2stats.py.
+    Load and concatenate stats TSVs produced by so2covstats.py.
     Each file must contain a 'sampleid' column; duplicate (seqid, sampleid)
     combinations across files raise an error.
     """
@@ -189,7 +190,7 @@ def main():
 
     parser.add_argument(
         "--stats", nargs="+", required=True, type=Path, metavar="FILE",
-        help="Two or more .stats.tsv files produced by so2stats.py.",
+        help="Two or more .covstats.tsv files produced by so2covstats.py.",
     )
     parser.add_argument(
         "--outfile", "-o", type=Path, metavar="FILE", default=None,
@@ -251,7 +252,7 @@ def main():
     pd.set_option("display.width", 200)
     pd.set_option("display.max_colwidth", 50)
     print(f"\nTop sequences (flagged first, then by cn_abs; full details in {outfile}):")
-    print(wide[preview_cols].head(20).to_string(index=False))
+    print(wide[preview_cols].head(10).to_string(index=False))
 
     # flag summary
     print(f"\nFlagged: {wide['flagged'].sum()} / {len(wide)} sequences")

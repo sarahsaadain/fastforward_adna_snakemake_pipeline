@@ -617,22 +617,27 @@ class PlotableFormater:
     offset=1
     
     @classmethod
-    def prepareCoveragForPrint(cls,seqname:str,set:list, sampleid:str,covtype:str):
-        """
-        print the coverage a list of coverages
-        """
-        tmp=[]
-        for i,c in enumerate(set):
-            # seqname, sampleid, cov, pos, count
-            t=[seqname,sampleid,covtype,str(i+PlotableFormater.offset),str(c)]
-            tmp.append(t)
-        
+    def prepareCoveragForPrint(cls, seqname: str, cov: list, sampleid: str, covtype: str, bin_size: int = 1):
+        tmp = []
+        n = len(cov)
+        if bin_size <= 1:
+            for i, c in enumerate(cov):
+                tmp.append([seqname, sampleid, covtype, str(i + cls.offset), str(c)])
+        else:
+            for start in range(0, n, bin_size):
+                end = min(start + bin_size, n)
+                chunk = cov[start:end]
+                avg = sum(chunk) / len(chunk)
+                mid_pos = start + (end - start) // 2 + cls.offset
+                tmp.append([seqname, sampleid, covtype, str(mid_pos), str(avg)])
+
+        if not tmp:
+            return tmp
+
         # R-polygon necessity
-        first,last=tmp[0],tmp[-1]
-        newfirst=[first[0],first[1],first[2],first[3],"0.0"]
-        newlast=[last[0],last[1],last[2],last[3],"0.0"]
-        tmp.insert(0,newfirst)
-        tmp.append(newlast)
+        first, last = tmp[0], tmp[-1]
+        tmp.insert(0, [first[0], first[1], first[2], first[3], "0.0"])
+        tmp.append([last[0], last[1], last[2], last[3], "0.0"])
         return tmp
     
     @classmethod
@@ -692,14 +697,14 @@ class PlotableFormater:
         return toret
 
     @classmethod
-    def prepareForPrint(cls, se: SeqEntry, sampleid:str,tomask,ymax):
+    def prepareForPrint(cls, se: SeqEntry, sampleid: str, tomask, ymax, bin_size: int = 1):
         # get local masking
         localmask=tomask[se.seqname] # bed is 0-based
         # coverages and mask according to user specifications
         cov=se.cov
         ambcov=se.ambcov
         mcov=[0]*len(cov)
-    
+
         for i in range(0,len(cov)):
             c=cov[i]
             # mask coverage if either in localmaks or coverage exceeds ymax
@@ -714,13 +719,13 @@ class PlotableFormater:
                 localmask[i]=True
 
         lines=[]
-        covt=PlotableFormater.prepareCoveragForPrint(se.seqname ,cov,sampleid,"cov")
-        ambcovt=PlotableFormater.prepareCoveragForPrint(se.seqname,ambcov,sampleid,"ambcov")
-        mcovt=PlotableFormater.prepareCoveragForPrint(se.seqname,mcov,sampleid,"mcov")
+        covt=PlotableFormater.prepareCoveragForPrint(se.seqname, cov, sampleid, "cov", bin_size)
+        ambcovt=PlotableFormater.prepareCoveragForPrint(se.seqname, ambcov, sampleid, "ambcov", bin_size)
+        mcovt=PlotableFormater.prepareCoveragForPrint(se.seqname, mcov, sampleid, "mcov", bin_size)
         lines.extend(covt)
         lines.extend(ambcovt)
         lines.extend(mcovt)
-        
+
         snps=PlotableFormater.prepareSNPForPrint(se,sampleid,localmask)
         lines.extend(snps)
         indels=PlotableFormater.prepareIndelForPrint(se,sampleid,localmask)

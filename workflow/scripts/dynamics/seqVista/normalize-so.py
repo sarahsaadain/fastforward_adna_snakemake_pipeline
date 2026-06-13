@@ -1,44 +1,91 @@
-#!/usr/bin/env python
-import argparse
-from modules import SeqEntryReader, NormFactor, Writer
-from version import __version__
-import logging
+#!/usr/bin/env python3
+"""
+Normalize coverage in a .so file to single-copy gene (SCG) mean coverage.
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+Sequences whose names end with --scg-end are used to derive the normalization
+factor. After normalization, coverage of 1.0 corresponds to single-copy depth.
 
-parser = argparse.ArgumentParser(description="""
-normalizes the coverage for seqentries
-""",formatter_class=argparse.RawDescriptionHelpFormatter,
-epilog="""
+Usage
+-----
+    SeqVista normalize --so sample.so --outfile sample.norm.so
+    SeqVista normalize --so sample.so --scg-end _scg --outfile sample.norm.so
+
 Authors
 -------
     Robert Kofler
     Sarah Saadain
-""")
-parser.add_argument('--so', type=str, default=None,dest="seqentry", required=True, help="A sequence overview (so) file")
-parser.add_argument("--scg-end", type=str, required=False, dest="scgend", default="_scg", help="the ending by which to recognize single copy gens (scg)")
-parser.add_argument("--end-distance", type=int, required=False, dest="enddist", default=100, help="distance from ends for normalizing")
-parser.add_argument("--exclude-quantile", type=int, required=False, dest="quantile", default=25, help="exclude the most extreme coverage quantiles for normalizing")
-parser.add_argument("--outfile", type=str, required=False, dest="outfile", default=None, help="output file in so format; if none is provided output will be screen")
-parser.add_argument("--log-level", type=str, required=False, dest="loglevel", default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], help="set the logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)")
-parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
+"""
 
-args = parser.parse_args()
-logging.getLogger().setLevel(args.loglevel)
+import argparse
+import logging
+import sys
+from pathlib import Path
 
-#if no output file is provided, don't write log to screen, otherwise it will mess up the output
-if args.outfile is None:
-    logging.getLogger().setLevel("ERROR")
+from modules import SeqEntryReader, NormFactor, Writer
+from version import __version__
 
-writer = Writer(args.outfile)
-# first get the normalization factor
-normfactor = NormFactor.getNormalizationFactor(args.seqentry, args.scgend ,args.enddist, args.quantile)
+log = logging.getLogger(__name__)
 
-if normfactor == 0:
-    logging.error("Normalization factor is zero. This may indicate that no single copy genes were found or that the coverage is zero or very low. Please check your input data.")
-    exit(1)
 
-# than normalize each entry
-for se in SeqEntryReader(args.seqentry):
-    sen = se.normalize(normfactor)
-    writer.write(str(sen))
+def main():
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+    parser = argparse.ArgumentParser(
+        description="Normalize coverage in a .so file to single-copy gene mean coverage.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=__doc__,
+    )
+    parser.add_argument(
+        "--so", required=True, type=Path, metavar="FILE", dest="seqentry",
+        help="A sequence overview (.so) file.",
+    )
+    parser.add_argument(
+        "--scg-end", type=str, default="_scg", metavar="STR", dest="scgend",
+        help="Suffix that identifies single-copy-gene entries (default: _scg).",
+    )
+    parser.add_argument(
+        "--end-distance", type=int, default=100, metavar="N", dest="enddist",
+        help="Distance from sequence ends excluded before computing the normalization factor (default: 100).",
+    )
+    parser.add_argument(
+        "--exclude-quantile", type=int, default=25, metavar="N", dest="quantile",
+        help="Exclude the most extreme coverage quantiles when normalizing (default: 25).",
+    )
+    parser.add_argument(
+        "--outfile", "-o", type=Path, metavar="FILE", default=None,
+        help="Output file in SO format; if omitted, output is written to stdout.",
+    )
+    parser.add_argument(
+        "--log-level", dest="loglevel", default="INFO",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        help="Set the logging level (default: INFO).",
+    )
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
+
+    args = parser.parse_args()
+    logging.getLogger().setLevel(args.loglevel)
+
+    #if no output file is provided, don't write log to screen, otherwise it will mess up the output
+    if args.outfile is None:
+        logging.getLogger().setLevel("ERROR")
+
+    if not args.seqentry.is_file():
+        parser.error(f"File not found: {args.seqentry}")
+
+    writer = Writer(str(args.outfile) if args.outfile else None)
+    normfactor = NormFactor.getNormalizationFactor(str(args.seqentry), args.scgend, args.enddist, args.quantile)
+
+    if normfactor == 0:
+        log.error(
+            "Normalization factor is zero. This may indicate that no single copy genes were found "
+            "or that the coverage is zero or very low. Please check your input data."
+        )
+        sys.exit(1)
+
+    for se in SeqEntryReader(str(args.seqentry)):
+        sen = se.normalize(normfactor)
+        writer.write(str(sen))
+
+
+if __name__ == "__main__":
+    main()

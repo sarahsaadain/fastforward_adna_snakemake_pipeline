@@ -4,12 +4,18 @@ SeqVista — central command for the SeqVista analysis pipeline
 
 Subcommands
 -----------
-  bam2so        Convert BAM/SAM to sequence-overview (.so) format
-  normalize     Normalize .so coverage to single-copy genes
-  estimate      Estimate per-entry coverage statistics from a .so file
-  so2plotable   Convert .so to R-plottable format
-  plot          Render .plotable files to PNG via R
-
+    bam2so        Convert BAM/SAM to sequence-overview (.so) format
+    normalize     Normalize .so coverage to single-copy genes
+    estimate      Estimate per-entry coverage statistics from a .so file
+    so2plotable   Convert .so to R-plottable format
+    plot          Render .plotable files to PNG via R
+    cov-stats      Summarize .so coverage to tab-delimited stats
+    cov-compare    Compare coverage stats files across samples
+    snp-stats      Compute per-position SNP stats from a .so file
+    snp-compare    Compare per-position SNP stats across samples
+    indel-stats    Compute per-position indel stats from a .so file
+    indel-compare  Compare per-position indel stats across samples
+  
 Pass --help after any subcommand for its full usage.
 """
 
@@ -26,8 +32,13 @@ _SUBCOMMANDS = {
     "normalize":   (_SRC / "normalize-so.py", "Normalize .so coverage to single-copy genes"),
     "estimate":    (_SRC / "estimate-so.py",  "Estimate per-entry coverage statistics"),
     "so2plotable": (_SRC / "so2plotable.py",  "Convert .so → R-plottable format"),
-    "plot":        (_SRC / "run_plotable.py", "Render .plotable files to PNG via R"),
-    "summarize":   (_SRC / "so2summary.py",     "Summarize .so files into a variation statistics table"),
+    "plot":        (_SRC / "plot.py", "Render .plotable files to PNG via R"),
+    "cov-stats":     (_SRC / "so2covstats.py",        "Summarize .so coverage to tab-delimited stats"),
+    "snp-stats":     (_SRC / "so2snpstats.py",        "Compute per-position SNP stats from a .so file"),
+    "indel-stats":   (_SRC / "so2indelstats.py",      "Compute per-position indel stats from a .so file"),
+    "cov-compare":   (_SRC / "compare_covstats.py",   "Compare coverage stats files across samples"),
+    "snp-compare":   (_SRC / "compare_snpstats.py",   "Compare per-position SNP stats across samples"),
+    "indel-compare": (_SRC / "compare_indelstats.py", "Compare per-position indel stats across samples"),
 }
 
 

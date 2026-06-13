@@ -2,15 +2,34 @@
 """
 Compute per-sequence coverage and SNP statistics from a single .so file.
 
-Output is a TSV with one row per sequence, intended as input for compare_stats.py.
+Output is a TSV with one row per sequence, intended as input for compare_covstats.py.
 
 Usage
 -----
-    python so2stats.py --so sample1.so --sample-id Dmel1933_SL07 --outfile Dmel1933_SL07.stats.tsv
+    SeqVista covstats --so sample1.so --sample-id Dmel1933_SL07 --outfile Dmel1933_SL07.covstats.tsv
+
+Output columns
+--------------
+  seqid        sequence name
+  sampleid     value of --sample-id
+
+  Coverage
+  seq_len      number of positions in the sequence
+  median_cov   median coverage; copy-number proxy when SCG-normalised
+  mad_cov      median absolute deviation of coverage (robust spread)
+  cv_cov       MAD / median; scale-independent variation (NaN if median=0)
+  max_cov      peak coverage
+  frac_low     fraction of positions with coverage < 0.1 (absent/deleted proxy)
+
+  SNPs
+  n_snps       total alt-allele observations across all positions
+  snp_density  n_snps per 100 bp (length-normalised)
+  median_alt   median alt-allele count across SNP positions
 
 Authors
 -------
-    (adapted from run_plotable.py structure by Robert Kofler / Sarah Saadain)
+    Robert Kofler
+    Sarah Saadain
 """
 
 import argparse
@@ -115,7 +134,7 @@ def main():
     if not args.so.is_file():
         parser.error(f"File not found: {args.so}")
 
-    outfile = args.outfile if args.outfile else Path(f"{args.sample_id}.stats.tsv")
+    outfile = args.outfile if args.outfile else Path(f"{args.sample_id}.covstats.tsv")
 
     log.info("Parsing %s (sample_id=%s)", args.so.name, args.sample_id)
     stats = compute_stats(args.so, args.sample_id)
@@ -127,10 +146,10 @@ def main():
     stats.to_csv(outfile, sep="\t", index=False)
     log.info("Stats written to %s  (%d sequences)", outfile, len(stats))
 
-    pd.set_option("display.max_columns", None)
-    pd.set_option("display.width", 200)
-    pd.set_option("display.max_colwidth", 50)
-    print(stats.to_string(index=False))
+    # pd.set_option("display.max_columns", None)
+    # pd.set_option("display.width", 200)
+    # pd.set_option("display.max_colwidth", 50)
+    # print(stats.to_string(index=False))
 
 
 if __name__ == "__main__":

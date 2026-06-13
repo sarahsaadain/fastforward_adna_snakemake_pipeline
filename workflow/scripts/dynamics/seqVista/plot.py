@@ -2,30 +2,33 @@
 """
 Run visualize-plotable.R on .plotable files from one or multiple sample folders.
 
+Usage
+-----
+
 Single file mode:
-    python run_plotable.py --file sample.plotable
-    python run_plotable.py --file sample.plotable --outdir results/
-    python run_plotable.py --file sample.plotable --log
-    python run_plotable.py --file sample.plotable --ymax 500
+    SeqVista plot --file sample.plotable
+    SeqVista plot --file sample.plotable --outdir results/
+    SeqVista plot --file sample.plotable --log
+    SeqVista plot --file sample.plotable --ymax 500
 
 Multi-file (merged/facet) mode — same seqid across individuals:
-    python run_plotable.py --files ind1/seq.plotable ind2/seq.plotable --outdir merged_results/
-    python run_plotable.py --files ind1/seq.plotable ind2/seq.plotable --outdir merged_results/ --log
-    python run_plotable.py --files ind1/seq.plotable ind2/seq.plotable --outdir merged_results/ --merged-dir kept_merges/
-    python run_plotable.py --files ind1/seq.plotable ind2/seq.plotable --outdir merged_results/ --ymax 500
+    SeqVista plot --files ind1/seq.plotable ind2/seq.plotable --outdir merged_results/
+    SeqVista plot --files ind1/seq.plotable ind2/seq.plotable --outdir merged_results/ --log
+    SeqVista plot --files ind1/seq.plotable ind2/seq.plotable --outdir merged_results/ --merged-dir kept_merges/
+    SeqVista plot --files ind1/seq.plotable ind2/seq.plotable --outdir merged_results/ --ymax 500
 
 Single folder mode:
-    python run_plotable.py --folder Dmel01_plottable
-    python run_plotable.py --folder Dmel01_plottable --output results/
-    python run_plotable.py --folder Dmel01_plottable --log
-    python run_plotable.py --folder Dmel01_plottable --log 1000
-    python run_plotable.py --folder Dmel01_plottable --ymax 500
+    SeqVista plot --folder Dmel01_plottable
+    SeqVista plot --folder Dmel01_plottable --output results/
+    SeqVista plot --folder Dmel01_plottable --log
+    SeqVista plot --folder Dmel01_plottable --log 1000
+    SeqVista plot --folder Dmel01_plottable --ymax 500
 
 Multi-folder (merged/facet) mode:
-    python run_plotable.py --folders Dmel01_plottable Dmel02_plottable --output merged_results/
-    python run_plotable.py --folders Dmel01_plottable Dmel02_plottable --output merged_results/ --log
-    python run_plotable.py --folders Dmel01_plottable Dmel02_plottable --output merged_results/ --merged-dir kept_merges/
-    python run_plotable.py --folders Dmel01_plottable Dmel02_plottable --output merged_results/ --ymax 500
+    SeqVista plot --folders Dmel01_plottable Dmel02_plottable --output merged_results/
+    SeqVista plot --folders Dmel01_plottable Dmel02_plottable --output merged_results/ --log
+    SeqVista plot --folders Dmel01_plottable Dmel02_plottable --output merged_results/ --merged-dir kept_merges/
+    SeqVista plot --folders Dmel01_plottable Dmel02_plottable --output merged_results/ --ymax 500
 
 Authors
 -------
