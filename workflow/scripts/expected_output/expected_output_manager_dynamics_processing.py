@@ -93,6 +93,13 @@ def get_expected_output_dynamics_processing(species):
                     f"{species}/results/dynamics/{feature_library}/seqvista/species_level/{species}_plotables_facet.tar.gz"
                 )
 
+            all_inputs.append(
+                f"{species}/results/dynamics/{feature_library}/seqvista/species_level/{species}_{feature_library}_snp_comparison.tsv"
+            )
+            all_inputs.append(
+                f"{species}/results/dynamics/{feature_library}/seqvista/species_level/{species}_{feature_library}_indel_comparison.tsv"
+            )
+
             for individual in individuals:
                 all_inputs.append(
                     f"{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_coverage.tsv.gz"
@@ -102,6 +109,12 @@ def get_expected_output_dynamics_processing(species):
                 )
                 all_inputs.append(
                     f"{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_coverage.normalized.stats.tsv"
+                )
+                all_inputs.append(
+                    f"{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_snpstats.tsv"
+                )
+                all_inputs.append(
+                    f"{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_indelstats.tsv"
                 )
 
                 if individual_plots_mode == "plot":

@@ -120,7 +120,7 @@ rule prepare_seqvista_visualization_of_individual:
     message:
         "Preparing seqvista visualization for {wildcards.individual} of {wildcards.species}."
     params:
-        bin_size = lambda _: config.get("pipeline", {}).get("dynamics", {}).get("seqvista", {}).get("settings", {}).get("visualization_bin_size", "target:10000")
+        bin_size = lambda _: config.get("pipeline", {}).get("dynamics", {}).get("seqvista", {}).get("settings", {}).get("visualization_bin_size", "target:5000")
     shell:
         """
         python workflow/scripts/dynamics/seqvista/so2plotable.py \
@@ -148,6 +148,40 @@ rule calculate_seqvista_normalized_stats_of_individual:
             --sample-id {wildcards.individual}
         """
 
+rule calculate_seqvista_snp_stats_of_individual:
+    input:
+        coverage="{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_coverage.normalized.tsv.gz",
+    output:
+        stats="{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_snpstats.tsv"
+    conda:
+        "../../../envs/python_and_r.yaml"
+    message:
+        "Calculating SNP stats for {wildcards.individual} of {wildcards.species}."
+    shell:
+        """
+        python workflow/scripts/dynamics/seqvista/so2snpstats.py \
+            --so {input.coverage} \
+            --outfile {output.stats} \
+            --sample-id {wildcards.individual}
+        """
+
+rule calculate_seqvista_indel_stats_of_individual:
+    input:
+        coverage="{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_coverage.normalized.tsv.gz",
+    output:
+        stats="{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_indelstats.tsv"
+    conda:
+        "../../../envs/python_and_r.yaml"
+    message:
+        "Calculating indel stats for {wildcards.individual} of {wildcards.species}."
+    shell:
+        """
+        python workflow/scripts/dynamics/seqvista/so2indelstats.py \
+            --so {input.coverage} \
+            --outfile {output.stats} \
+            --sample-id {wildcards.individual}
+        """
+
 rule compare_seqvista_stats_accross_individuals_of_species:
     input:
         lambda wildcards: expand(
@@ -164,6 +198,46 @@ rule compare_seqvista_stats_accross_individuals_of_species:
     shell:
         """
         python workflow/scripts/dynamics/seqvista/compare_covstats.py --stats {input} --outfile {output.stats}
+        """
+
+rule compare_seqvista_snp_stats_across_individuals_of_species:
+    input:
+        lambda wildcards: expand(
+            "{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_snpstats.tsv",
+            species=wildcards.species,
+            feature_library=wildcards.feature_library,
+            individual=get_individuals_for_species(wildcards.species))
+    output:
+        comparison="{species}/results/dynamics/{feature_library}/seqvista/species_level/{species}_{feature_library}_snp_comparison.tsv",
+    conda:
+        "../../../envs/python_and_r.yaml"
+    message:
+        "Comparing SNP stats across individuals of {wildcards.species}."
+    shell:
+        """
+        python workflow/scripts/dynamics/seqvista/compare_snpstats.py \
+            --snpstats {input} \
+            --outfile {output.comparison}
+        """
+
+rule compare_seqvista_indel_stats_across_individuals_of_species:
+    input:
+        lambda wildcards: expand(
+            "{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_indelstats.tsv",
+            species=wildcards.species,
+            feature_library=wildcards.feature_library,
+            individual=get_individuals_for_species(wildcards.species))
+    output:
+        comparison="{species}/results/dynamics/{feature_library}/seqvista/species_level/{species}_{feature_library}_indel_comparison.tsv",
+    conda:
+        "../../../envs/python_and_r.yaml"
+    message:
+        "Comparing indel stats across individuals of {wildcards.species}."
+    shell:
+        """
+        python workflow/scripts/dynamics/seqvista/compare_indelstats.py \
+            --indelstats {input} \
+            --outfile {output.comparison}
         """
 
 rule combine_seqvista_stats_across_feature_libraries:
