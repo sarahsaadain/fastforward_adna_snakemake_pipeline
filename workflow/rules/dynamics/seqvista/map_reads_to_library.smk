@@ -8,11 +8,14 @@ _BWA_ALN_DEFAULTS    = "-n 0.01 -k 2 -l 1024 -o 2"  # Oliva et al. 2021 (10.1093
 _MINIMAP2_DEFAULTS   = "-ax sr"
 _dyn_mapper_extra    = _dyn_settings.get("mapper_extra_params", _BWA_ALN_DEFAULTS if _dyn_mapper == "bwa-aln" else (_MINIMAP2_DEFAULTS if _dyn_mapper == "minimap2" else ""))
 _dyn_keep_mapped_bam = _dyn_settings.get("keep_mapped_bam", False)
+_dyn_min_mapq_scg    = _dyn_settings.get("min_mapq_scg", 15)
+_dyn_min_mapq_fle    = _dyn_settings.get("min_mapq_fle", 0)
 _comp_execute        = config.get("pipeline", {}).get("dynamics", {}).get("mapping", {}).get("settings", {}).get("competitive_mapping", False)
 
 _MAPPED_BAM = "{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.sorted.bam"
 _MAPPED_BAI = _MAPPED_BAM + ".bai"
-_MAPPED_BAM_PRECOMP = "{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.sorted.precomp.bam"
+_MAPPED_BAM_PRECOMP  = "{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.sorted.precomp.bam"
+_MAPPED_BAM_PREMAPQ  = "{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.sorted.premapq.bam"
 
 if _dyn_mapper == "minimap2":
     rule index_library_for_mapping_minimap2:
@@ -146,7 +149,7 @@ if _comp_execute:
         input:
             bam=_MAPPED_BAM_PRECOMP
         output:
-            bam=_MAPPED_BAM if _dyn_keep_mapped_bam else temp(_MAPPED_BAM)
+            bam=temp(_MAPPED_BAM_PREMAPQ) if (_dyn_min_mapq_scg > 0 or _dyn_min_mapq_fle > 0) else (_MAPPED_BAM if _dyn_keep_mapped_bam else temp(_MAPPED_BAM))
         message: "Filtering competition sequences from BAM for {wildcards.individual}"
         log:
             "{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_filter_comp.log"
@@ -163,18 +166,42 @@ if _comp_execute:
             """
 
 else:
-    # Rule: Remove unmapped reads — output is the final BAM
+    # Rule: Remove unmapped reads — output is either pre-MAPQ intermediate or the final BAM
     rule remove_unmapped_reads_to_scg_feature_library:
         input:
             "{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.sorted.with_unmapped.bam"
         output:
-            bam=_MAPPED_BAM if _dyn_keep_mapped_bam else temp(_MAPPED_BAM)
+            bam=temp(_MAPPED_BAM_PREMAPQ) if (_dyn_min_mapq_scg > 0 or _dyn_min_mapq_fle > 0) else (_MAPPED_BAM if _dyn_keep_mapped_bam else temp(_MAPPED_BAM))
         message: "Removing unmapped reads from BAM file for {input}"
         params:
             extra="-b -F 4",
         threads: 2
         wrapper:
             "v9.3.0/bio/samtools/view"
+
+if _dyn_min_mapq_scg > 0 or _dyn_min_mapq_fle > 0:
+    # Rule: Apply per-suffix MAPQ filters; SCG (_scg) and feature (_fle) thresholds are independent.
+    rule filter_dynamics_reads_from_bam_by_mapq:
+        input:
+            bam=_MAPPED_BAM_PREMAPQ
+        output:
+            bam=_MAPPED_BAM if _dyn_keep_mapped_bam else temp(_MAPPED_BAM)
+        message: "Filtering reads by MAPQ (SCG < {params.min_mapq_scg}, FLE < {params.min_mapq_fle}) for {wildcards.individual}"
+        log:
+            "{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_filter_mapq.log"
+        params:
+            min_mapq_scg=_dyn_min_mapq_scg,
+            min_mapq_fle=_dyn_min_mapq_fle
+        threads: 2
+        conda:
+            "../../../envs/samtools.yaml"
+        shell:
+            """
+            samtools view -h {input.bam} | \
+            awk -v mq_scg={params.min_mapq_scg} -v mq_fle={params.min_mapq_fle} \
+              'BEGIN{{OFS="\t"}} /^@/{{print; next}} ($3 ~ /_scg$/ && $5+0 < mq_scg) {{next}} ($3 ~ /_fle$/ && $5+0 < mq_fle) {{next}} {{print}}' | \
+            samtools view -b -o {output.bam} 2>{log}
+            """
 
 # SAMTOOLS doesn't parallelize the indexing work — it only parallelizes compression/decompression.
 rule index_bam_reads_to_library:

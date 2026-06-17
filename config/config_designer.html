@@ -1080,6 +1080,19 @@
                 <input type="number" id="scg_max_len" value="8000" min="1" oninput="render()">
                 <span style="font-size:.68rem;color:var(--text-muted);margin-top:3px;display:block">Maximum sequence length for a BUSCO SCG to be included (Default: 8000; overridable per species)</span>
               </div>
+              <p style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin:14px 0 8px;border-top:1px solid var(--border);padding-top:12px">BAM filtering</p>
+              <div class="field">
+                <label>Min MAPQ (SCG BAM)</label>
+                <input type="number" id="scg_min_mapq" value="15" min="0" oninput="render()">
+                <span style="font-size:.68rem;color:var(--text-muted);margin-top:3px;display:block">Reads with MAPQ below this value are removed from the SCG BAM. Also applied when computing coverage stats. Set to 0 (default) to disable.</span>
+              </div>
+              <div class="toggle-wrap" style="margin-top:8px">
+                <label class="toggle">
+                  <input type="checkbox" id="scg_keep_bam" onchange="render()">
+                  <span class="slider"></span>
+                </label>
+                <label class="lbl" for="scg_keep_bam">Keep SCG BAM &amp; index after ranking <span style="color:var(--text-muted);font-size:.75em">(default: off — deleted after SCG ranking consumes them)</span></label>
+              </div>
             </div>
             </div><!-- /.adv-content -->
           </div>
@@ -1135,6 +1148,16 @@
                   <span class="slider"></span>
                 </label>
                 <label class="lbl" for="dyn_comp_mapping">Enable competitive mapping <span style="color:var(--text-muted);font-size:.75em">(default: off — place a FASTA in <code>{species}/raw/dynamics/competition/</code>; sequences suffixed <code>_comp</code> are removed after mapping)</span></label>
+              </div>
+              <div class="field" style="margin-top:8px">
+                <label>Min MAPQ for SCG reads</label>
+                <input type="number" id="dyn_min_mapq_scg" value="15" min="0" oninput="render()">
+                <span style="font-size:.68rem;color:var(--text-muted);margin-top:3px;display:block">Reads mapping to SCG (<code>_scg</code>) references with MAPQ below this value are removed after mapping. Feature library reads are not affected. (Default: 15)</span>
+              </div>
+              <div class="field" style="margin-top:8px">
+                <label>Min MAPQ for feature reads</label>
+                <input type="number" id="dyn_min_mapq_fle" value="0" min="0" oninput="render()">
+                <span style="font-size:.68rem;color:var(--text-muted);margin-top:3px;display:block">Reads mapping to feature library (<code>_fle</code>) references with MAPQ below this value are removed after mapping. SCG reads are not affected. Set to 0 (default) to disable.</span>
               </div>
             </div>
             </div><!-- /.adv-content -->
@@ -1516,12 +1539,16 @@ function buildYAML() {
   kv(8, 'num_top_scgs', gn('scg_num_top'));
   kv(8, 'min_length_scg', gn('scg_min_len'));
   kv(8, 'max_length_scg', gn('scg_max_len'));
+  kv(8, 'min_mapq', gn('scg_min_mapq'));
+  kv(8, 'keep_mapped_bam', gb('scg_keep_bam'));
   p(4, 'mapping:');
   p(6, 'settings:');
   kv(8, 'mapper', gv('dyn_mapper'));
   if (gb('dyn_xp_en') && gv('dyn_xp').trim()) kv(8, 'mapper_extra_params', gv('dyn_xp'));
   kv(8, 'keep_mapped_bam', gb('dyn_keep_mapped_bam'));
   kv(8, 'competitive_mapping', gb('dyn_comp_mapping'));
+  kv(8, 'min_mapq_scg', gn('dyn_min_mapq_scg'));
+  kv(8, 'min_mapq_fle', gn('dyn_min_mapq_fle'));
   p(4, 'seqvista:');
   kv(6, 'execute', gb('sv_exec'));
   p(6, 'settings:');
@@ -1780,12 +1807,16 @@ function populateForm(c) {
   sv('scg_num_top', scgs.num_top_scgs  != null ? scgs.num_top_scgs  : 20);
   sv('scg_min_len', scgs.min_length_scg != null ? scgs.min_length_scg : 4000);
   sv('scg_max_len', scgs.max_length_scg != null ? scgs.max_length_scg : 8000);
+  sv('scg_min_mapq', scgs.min_mapq != null ? scgs.min_mapq : 0);
+  sb('scg_keep_bam', scgs.keep_mapped_bam);
   const dym = (dyn.mapping||{}).settings||{};
   sv('dyn_mapper', dym.mapper); mapperInfo('dyn_mapper','dyn_minfo');
   if (dym.mapper_extra_params !== undefined) { setOpt('dyn_xp_en','dyn_xp_body','dyn_xp_hdr',true); sv('dyn_xp',dym.mapper_extra_params); }
   else setOpt('dyn_xp_en','dyn_xp_body','dyn_xp_hdr',false);
   sb('dyn_keep_mapped_bam', dym.keep_mapped_bam);
   sb('dyn_comp_mapping', dym.competitive_mapping);
+  sv('dyn_min_mapq_scg', dym.min_mapq_scg != null ? dym.min_mapq_scg : 15);
+  sv('dyn_min_mapq_fle', dym.min_mapq_fle != null ? dym.min_mapq_fle : 0);
   sb('sv_exec',  (dyn.seqvista||{}).execute);                     dot('sv_exec','d_sv');
   const svs = (dyn.seqvista||{}).settings||{};
   sv('sv_individual_plots', svs.individual_plots || 'plot');

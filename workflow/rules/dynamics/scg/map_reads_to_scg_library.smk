@@ -18,6 +18,11 @@ _scg_sel_mapper_extra  = (
     or _dyn_settings.get("mapper_extra_params")
     or _mapper_extra_fallback
 )
+_scg_keep_bam  = _scg_sel_settings.get("keep_mapped_bam", False)
+_scg_min_mapq  = _scg_sel_settings.get("min_mapq", 15)
+
+_SCG_SORTED_BAM      = "{species}/processed/dynamics/scg/reads_mapped/{individual}_scg_library.sorted.bam"
+_SCG_SORTED_BAI      = _SCG_SORTED_BAM + ".bai"
 
 if _scg_sel_mapper == "minimap2":
 
@@ -135,15 +140,16 @@ else:
         wrapper:
             "v9.3.0/bio/bwa-mem2/mem"
 
-# Remove unmapped reads — BAM is temporary (only needed for stats computation)
-rule remove_unmapped_reads_from_scg_bam:
+# Remove unmapped reads and optionally apply MAPQ filter in one pass.
+# Since all references in the SCG library are SCG sequences, samtools -q filters globally.
+rule remove_unmapped_reads_and_filter_by_mapq_from_scg_bam:
     input:
         "{species}/processed/dynamics/scg/reads_mapped/{individual}_scg_library.sorted.with_unmapped.bam"
     output:
-        bam=temp("{species}/processed/dynamics/scg/reads_mapped/{individual}_scg_library.sorted.bam")
+        bam=_SCG_SORTED_BAM if _scg_keep_bam else temp(_SCG_SORTED_BAM)
     message: "Removing unmapped reads from SCG BAM for {input}"
     params:
-        extra="-b -F 4",
+        extra=f"-b -F 4{f' -q {_scg_min_mapq}' if _scg_min_mapq > 0 else ''}",
     threads: 2
     wrapper:
         "v9.3.0/bio/samtools/view"
@@ -151,9 +157,9 @@ rule remove_unmapped_reads_from_scg_bam:
 # SAMTOOLS doesn't parallelize the indexing work — it only parallelizes compression/decompression.
 rule index_scg_bam_reads:
     input:
-        "{species}/processed/dynamics/scg/reads_mapped/{individual}_scg_library.sorted.bam"
+        _SCG_SORTED_BAM
     output:
-        temp("{species}/processed/dynamics/scg/reads_mapped/{individual}_scg_library.sorted.bam.bai")
+        _SCG_SORTED_BAI if _scg_keep_bam else temp(_SCG_SORTED_BAI)
     message: "Indexing SCG BAM file for {input}"
     params:
         extra="",

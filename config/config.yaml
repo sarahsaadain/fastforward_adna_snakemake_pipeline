@@ -192,6 +192,14 @@ pipeline:
         # suffixed with _comp, and reads mapping to them are removed after mapping — only SCG and
         # feature library sequences are retained for downstream analysis. (Default: false)
         competitive_mapping: false
+        # Minimum mapping quality score applied to SCG sequences (_scg) in the combined library.
+        # Reads mapping to SCG references with MAPQ below this value are removed after mapping.
+        # Set to 0 to disable.
+        min_mapq_scg: 15
+        # Minimum mapping quality score applied to feature library sequences (_fle) in the combined library.
+        # Reads mapping to feature references with MAPQ below this value are removed after mapping.
+        # SCG reads (_scg) are not affected. Set to 0 (default) to disable.
+        min_mapq_fle: 0
 
     # ── SCG Selector ──────────────────────────────────────────────────────────
     # Automatically determines single-copy genes (SCGs) via BUSCO when no SCG
@@ -219,6 +227,14 @@ pipeline:
         min_length_scg: 4000
         # Maximum SCG sequence length in bp to include (Default: 8000)
         max_length_scg: 8000
+        # Minimum mapping quality score for reads mapped to the SCG library.
+        # Reads with MAPQ below this value are removed from the BAM after unmapped-read removal.
+        # Also used as the threshold when computing per-contig coverage stats. Set to 0 to disable.
+        min_mapq: 15
+        # When true, the filtered sorted SCG BAM and its index are kept as permanent outputs in
+        # {species}/processed/dynamics/scg/reads_mapped/. When false (default), they are
+        # marked as temporary and deleted after SCG ranking consumes them.
+        keep_mapped_bam: false
 
     seqvista:
       # When true, this sub-stage will be executed (Default: true)

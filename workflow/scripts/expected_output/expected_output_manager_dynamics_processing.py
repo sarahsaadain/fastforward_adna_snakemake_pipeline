@@ -56,7 +56,7 @@ def get_expected_output_dynamics_processing(species):
 
     individuals = get_individuals_for_species(species)
 
-    all_inputs.append(f"{species}/results/dynamics/{species}_seqvista_stats_comparison.tsv")
+    all_inputs.append(f"{species}/results/dynamics/{species}_seqvista_coverage_comparison.tsv")
 
     keep_mapped_bam = dyn_cfg.get("mapping", {}).get("settings", {}).get("keep_mapped_bam", False)
 
@@ -75,7 +75,7 @@ def get_expected_output_dynamics_processing(species):
 
             # Species-level stats (always produced when seqvista is enabled)
             all_inputs.append(
-                f"{species}/results/dynamics/{feature_library}/seqvista/species_level/{species}_{feature_library}_stats_comparison.tsv"
+                f"{species}/results/dynamics/{feature_library}/seqvista/species_level/{species}_{feature_library}_coverage_comparison.tsv"
             )
             all_inputs.append(
                 f"{species}/results/dynamics/{feature_library}/seqvista/species_level/{species}_{feature_library}_flagged_seqids.tsv"

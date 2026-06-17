@@ -278,12 +278,14 @@ class NormFactor:
             # ignore the ends of the entries
             if len(se.cov) <= 2 *minDistance:
                 continue
+            # use only unambiguous coverage (total - ambiguous)
+            unambig_cov=[c-a for c,a in zip(se.cov,se.ambcov)]
             if minDistance>0:
                 # exclude the ends of the scgs
-                tcov=se.cov[minDistance:-minDistance]
+                tcov=unambig_cov[minDistance:-minDistance]
                 totcoverages.extend(tcov)
             else:
-                totcoverages.extend(se.cov)
+                totcoverages.extend(unambig_cov)
 
         # finaly exclude the quantiles of the largest and smallest coverages        
         totcoverages.sort()

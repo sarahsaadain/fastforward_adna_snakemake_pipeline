@@ -160,7 +160,7 @@ For each individual, **`so2stats`** computes per-sequence coverage and SNP stati
 
 #### Species-Level Comparison and Flagging
 
-After all individual stats files are produced, **`compare_stats`** pivots the per-individual long-format tables into a single wide-format species-level summary (`{species}_{feature_library}_stats_comparison.tsv`), with one row per sequence and per-sample metric columns named `{metric}__{sampleid}`. Cross-sample copy number metrics are added:
+After all individual stats files are produced, **`compare_stats`** pivots the per-individual long-format tables into a single wide-format species-level summary (`{species}_{feature_library}_coverage_comparison.tsv`), with one row per sequence and per-sample metric columns named `{metric}__{sampleid}`. Cross-sample copy number metrics are added:
 
 - `cn_min` / `cn_max` — lowest and highest `median_cov` across all individuals
 - `cn_abs` — absolute range (`cn_max − cn_min`)
@@ -168,7 +168,7 @@ After all individual stats files are produced, **`compare_stats`** pivots the pe
 
 Sequences are flagged if they show a relative copy number shift exceeding the **`CN_FC`** threshold (default log₂FC ≥ 2) or an absolute shift exceeding the **`CN_ABS`** threshold (default Δ ≥ 10). Flagged sequences are written to a companion file `{species}_{feature_library}_flagged_seqids.tsv` and sorted to the top of the comparison table.
 
-A top-level cross-library summary (`{species}_seqvista_stats_comparison.tsv`) aggregates the flagged sequence lists across all feature libraries into a single file for rapid inspection.
+A top-level cross-library summary (`{species}_seqvista_coverage_comparison.tsv`) aggregates the flagged sequence lists across all feature libraries into a single file for rapid inspection.
 
 ## Module 4 — Processing Summary
 

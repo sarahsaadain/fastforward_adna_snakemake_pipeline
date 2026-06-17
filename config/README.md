@@ -229,6 +229,8 @@ Can also be used standalone (without feature libraries) to produce an SCG rankin
 | `settings.num_top_scgs` | `20` | Number of top-ranked SCGs to retain as normalisers. Per-species setting overrides this global default. |
 | `settings.min_length_scg` | `4000` | Minimum SCG sequence length in bp to include from BUSCO results. Per-species setting overrides this. |
 | `settings.max_length_scg` | `8000` | Maximum SCG sequence length in bp to include from BUSCO results. Per-species setting overrides this. |
+| `settings.min_mapq` | `15` | Minimum mapping quality for reads in the SCG library BAM. Reads with MAPQ below this value are removed after unmapped-read removal. The same threshold is applied when computing per-contig coverage stats for ranking. Set to `0` to disable MAPQ filtering. |
+| `settings.keep_mapped_bam` | `false` | When `true`, the filtered sorted SCG BAM and its index (`{species}/processed/dynamics/scg/reads_mapped/{individual}_scg_library.sorted.bam[.bai]`) are kept as permanent outputs. When `false` (default), they are marked as temporary and deleted after SCG ranking consumes them. |
 
 **Per-species SCG settings** (under `species.<key>.scg_selector`):
 
@@ -247,6 +249,8 @@ Can also be used standalone (without feature libraries) to produce an SCG rankin
 | `settings.mapper` | `bwa-mem2` | Mapper for feature-library mapping. Same options as `reference_processing.mapping`. |
 | `settings.mapper_extra_params` | — | Optional extra parameters passed directly to the mapper. |
 | `settings.keep_mapped_bam` | `false` | When `true`, the filtered sorted BAM and its index (`{species}/processed/dynamics/{feature_library}/mapped/{individual}_{feature_library}_and_scg.sorted.bam[.bai]`) are kept as permanent outputs and explicitly requested by the pipeline. When `false` (default), they are marked as temporary and deleted after SeqVista consumes them. Set to `true` to inspect the mapped BAM or to run the mapping step independently of SeqVista. |
+| `settings.min_mapq_scg` | `15` | Minimum mapping quality applied selectively to SCG sequences (`_scg` suffix) in the combined library BAM. Reads mapping to SCG references with MAPQ below this value are removed after mapping. Feature library reads are not affected. Set to `0` to disable. |
+| `settings.min_mapq_fle` | `0` | Minimum mapping quality applied selectively to feature library sequences (`_fle` suffix) in the combined library BAM. Reads mapping to feature references with MAPQ below this value are removed after mapping. SCG reads are not affected. Set to `0` (default) to disable. |
 
 #### `competitive_mapping`
 
