@@ -75,7 +75,7 @@ def get_expected_output_dynamics_processing(species):
 
             # Species-level stats (always produced when seqvista is enabled)
             all_inputs.append(
-                f"{species}/results/dynamics/{feature_library}/seqvista/species_level/{species}_{feature_library}_coverage_comparison.tsv"
+                f"{species}/results/dynamics/{feature_library}/seqvista/species_level/{species}_{feature_library}_coverage_comparison.tsv.gz"
             )
             all_inputs.append(
                 f"{species}/results/dynamics/{feature_library}/seqvista/species_level/{species}_{feature_library}_flagged_seqids.tsv"
@@ -94,10 +94,10 @@ def get_expected_output_dynamics_processing(species):
                 )
 
             all_inputs.append(
-                f"{species}/results/dynamics/{feature_library}/seqvista/species_level/{species}_{feature_library}_snp_comparison.tsv"
+                f"{species}/results/dynamics/{feature_library}/seqvista/species_level/{species}_{feature_library}_snp_comparison.tsv.gz"
             )
             all_inputs.append(
-                f"{species}/results/dynamics/{feature_library}/seqvista/species_level/{species}_{feature_library}_indel_comparison.tsv"
+                f"{species}/results/dynamics/{feature_library}/seqvista/species_level/{species}_{feature_library}_indel_comparison.tsv.gz"
             )
 
             for individual in individuals:
@@ -111,10 +111,10 @@ def get_expected_output_dynamics_processing(species):
                     f"{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_coverage.normalized.stats.tsv"
                 )
                 all_inputs.append(
-                    f"{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_snpstats.tsv"
+                    f"{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_snpstats.tsv.gz"
                 )
                 all_inputs.append(
-                    f"{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_indelstats.tsv"
+                    f"{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_indelstats.tsv.gz"
                 )
 
                 if individual_plots_mode == "plot":

@@ -34,7 +34,7 @@ def combine_seqvistas_for_species_input_coverage_files(wildcards):
 def combine_seqvista_coverage_stats_across_feature_libraries_input(wildcards):
     feature_libraries = get_feature_library_ids_for_species(wildcards.species)
     return expand(
-        "{species}/results/dynamics/{feature_library}/seqvista/species_level/{species}_{feature_library}_coverage_comparison.tsv",
+        "{species}/results/dynamics/{feature_library}/seqvista/species_level/{species}_{feature_library}_coverage_comparison.tsv.gz",
         species=wildcards.species,
         feature_library=feature_libraries
     )
@@ -152,7 +152,7 @@ rule calculate_seqvista_snp_stats_of_individual:
     input:
         coverage="{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_coverage.normalized.tsv.gz",
     output:
-        stats="{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_snpstats.tsv"
+        stats=temp("{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_snpstats.tsv")
     conda:
         "../../../envs/python_and_r.yaml"
     message:
@@ -169,7 +169,7 @@ rule calculate_seqvista_indel_stats_of_individual:
     input:
         coverage="{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_coverage.normalized.tsv.gz",
     output:
-        stats="{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_indelstats.tsv"
+        stats=temp("{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_indelstats.tsv")
     conda:
         "../../../envs/python_and_r.yaml"
     message:
@@ -190,7 +190,7 @@ rule compare_seqvista_stats_accross_individuals_of_species:
             feature_library=wildcards.feature_library,
             individual=get_individuals_for_species(wildcards.species))
     output:
-        stats="{species}/results/dynamics/{feature_library}/seqvista/species_level/{species}_{feature_library}_coverage_comparison.tsv",
+        stats=temp("{species}/results/dynamics/{feature_library}/seqvista/species_level/{species}_{feature_library}_coverage_comparison.tsv"),
     conda:
         "../../../envs/python_and_r.yaml"
     message:
@@ -203,12 +203,12 @@ rule compare_seqvista_stats_accross_individuals_of_species:
 rule compare_seqvista_snp_stats_across_individuals_of_species:
     input:
         lambda wildcards: expand(
-            "{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_snpstats.tsv",
+            "{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_snpstats.tsv.gz",
             species=wildcards.species,
             feature_library=wildcards.feature_library,
             individual=get_individuals_for_species(wildcards.species))
     output:
-        comparison="{species}/results/dynamics/{feature_library}/seqvista/species_level/{species}_{feature_library}_snp_comparison.tsv",
+        comparison=temp("{species}/results/dynamics/{feature_library}/seqvista/species_level/{species}_{feature_library}_snp_comparison.tsv"),
     conda:
         "../../../envs/python_and_r.yaml"
     message:
@@ -223,12 +223,12 @@ rule compare_seqvista_snp_stats_across_individuals_of_species:
 rule compare_seqvista_indel_stats_across_individuals_of_species:
     input:
         lambda wildcards: expand(
-            "{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_indelstats.tsv",
+            "{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_indelstats.tsv.gz",
             species=wildcards.species,
             feature_library=wildcards.feature_library,
             individual=get_individuals_for_species(wildcards.species))
     output:
-        comparison="{species}/results/dynamics/{feature_library}/seqvista/species_level/{species}_{feature_library}_indel_comparison.tsv",
+        comparison=temp("{species}/results/dynamics/{feature_library}/seqvista/species_level/{species}_{feature_library}_indel_comparison.tsv"),
     conda:
         "../../../envs/python_and_r.yaml"
     message:
@@ -322,6 +322,66 @@ rule compress_seqvista_coverage_normalized_of_individual:
     shell:
         "pigz -p {threads} -c {input.source} > {output.target}"
 
+rule compress_seqvista_snp_stats_of_individual:
+    input:
+        source = "{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_snpstats.tsv",
+    output:
+        target = "{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_snpstats.tsv.gz"
+    threads: 4
+    conda:
+        "../../../envs/pigz.yaml"
+    message: "Compressing SeqVista SNP stats for {wildcards.individual} of {wildcards.species}"
+    shell:
+        "pigz -p {threads} -c {input.source} > {output.target}"
+
+rule compress_seqvista_indel_stats_of_individual:
+    input:
+        source = "{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_indelstats.tsv",
+    output:
+        target = "{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_indelstats.tsv.gz"
+    threads: 4
+    conda:
+        "../../../envs/pigz.yaml"
+    message: "Compressing SeqVista indel stats for {wildcards.individual} of {wildcards.species}"
+    shell:
+        "pigz -p {threads} -c {input.source} > {output.target}"
+
+rule compress_seqvista_coverage_comparison_of_species:
+    input:
+        source = "{species}/results/dynamics/{feature_library}/seqvista/species_level/{species}_{feature_library}_coverage_comparison.tsv",
+    output:
+        target = "{species}/results/dynamics/{feature_library}/seqvista/species_level/{species}_{feature_library}_coverage_comparison.tsv.gz"
+    threads: 4
+    conda:
+        "../../../envs/pigz.yaml"
+    message: "Compressing SeqVista coverage comparison for {wildcards.species}"
+    shell:
+        "pigz -p {threads} -c {input.source} > {output.target}"
+
+rule compress_seqvista_snp_comparison_of_species:
+    input:
+        source = "{species}/results/dynamics/{feature_library}/seqvista/species_level/{species}_{feature_library}_snp_comparison.tsv",
+    output:
+        target = "{species}/results/dynamics/{feature_library}/seqvista/species_level/{species}_{feature_library}_snp_comparison.tsv.gz"
+    threads: 4
+    conda:
+        "../../../envs/pigz.yaml"
+    message: "Compressing SeqVista SNP comparison for {wildcards.species}"
+    shell:
+        "pigz -p {threads} -c {input.source} > {output.target}"
+
+rule compress_seqvista_indel_comparison_of_species:
+    input:
+        source = "{species}/results/dynamics/{feature_library}/seqvista/species_level/{species}_{feature_library}_indel_comparison.tsv",
+    output:
+        target = "{species}/results/dynamics/{feature_library}/seqvista/species_level/{species}_{feature_library}_indel_comparison.tsv.gz"
+    threads: 4
+    conda:
+        "../../../envs/pigz.yaml"
+    message: "Compressing SeqVista indel comparison for {wildcards.species}"
+    shell:
+        "pigz -p {threads} -c {input.source} > {output.target}"
+
 rule compress_seqvista_plotable_of_individual:
     input:
         source = "{species}/results/dynamics/{feature_library}/seqvista/individual_level/{individual}_plotable",
@@ -348,7 +408,7 @@ rule compress_seqvista_plotable_of_species:
 
 rule extract_flagged_seqids:
     input:
-        tsv = "{species}/results/dynamics/{feature_library}/seqvista/species_level/{species}_{feature_library}_coverage_comparison.tsv"
+        tsv = "{species}/results/dynamics/{feature_library}/seqvista/species_level/{species}_{feature_library}_coverage_comparison.tsv.gz"
     output:
         txt = "{species}/results/dynamics/{feature_library}/seqvista/species_level/{species}_{feature_library}_flagged_seqids.tsv"
     conda:
