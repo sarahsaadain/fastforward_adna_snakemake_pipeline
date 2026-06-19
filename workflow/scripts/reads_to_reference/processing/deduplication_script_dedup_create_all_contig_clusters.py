@@ -16,7 +16,7 @@ number_of_contigs = len(contigs)
 cores = params.get("cores", 1)
 
 max_contigs_per_cluster = params.get("max_contigs_per_cluster", 500)
-min_contigs_per_cluster = params.get("min_contigs_per_cluster", 10)
+min_contigs_per_cluster = params.get("min_contigs_per_cluster", 1)
 
 logger.info(f"Total contigs: {number_of_contigs}")
 logger.info(f"Available cores: {cores}")

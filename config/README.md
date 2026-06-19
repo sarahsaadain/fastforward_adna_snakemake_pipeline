@@ -184,7 +184,7 @@ Removes PCR and sequencing duplicates using DeDup. Default: **off**.
 
 | Setting | Default | Description |
 |---|---|---|
-| `settings.min_contigs_per_cluster` | `10` | Minimum number of contigs grouped into a cluster. Small contigs below this count are merged together before deduplication. |
+| `settings.min_contigs_per_cluster` | `1` | Minimum number of contigs grouped into a cluster. Small contigs below this count are merged together before deduplication. |
 | `settings.max_contigs_per_cluster` | `500` | Maximum number of contigs grouped per deduplication cluster. Lower values use less memory but increase runtime. Reduce (e.g. to 100) only for large, highly fragmented reference genomes. |
 
 #### `filter_unmapped_reads`
@@ -409,8 +409,8 @@ pipeline:
       # Default: true — set to false only if library complexity is very low
       execute: true
       settings:
-        # Minimum contigs per deduplication cluster (Default: 10)
-        min_contigs_per_cluster: 10
+        # Minimum contigs per deduplication cluster (Default: 1)
+        min_contigs_per_cluster: 1
         # Maximum contigs per deduplication cluster (Default: 500)
         max_contigs_per_cluster: 500
 
