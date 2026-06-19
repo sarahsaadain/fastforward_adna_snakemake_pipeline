@@ -14,7 +14,7 @@ Not reliably. Each pastForward rule is tied to a specific conda environment that
 **Q: How does the pastForward know which files to create?**
 pastForward defines a set of expected output files based on the configuration and the input data. At the start of each run, it performs an input validation step that checks for the presence of available input files and prints a summary of the detected files.
 
-Based on your configuration and the detected input files, pastForward determines which output files will be generated in this run. It prints a list of all the files that will be requested by pastForward based on the current config. 
+Based on your configuration and the detected input files, pastForward determines which output files will be generated in a particular run. It prints a list of all the files that will be requested by pastForward based on the current config. You can review this list in a dry run to ensure that all your input files are correctly detected and will be processed as expected.
 
 ---
 
@@ -131,6 +131,27 @@ Additionally, it will print all the files that will be requested by pastForward 
 
 Lastly, you can also see the rules that will be executed and their inputs/outputs. This allows you to verify that pastForward is correctly set up to process your data before actually running it.
 
+**Q: Can I provide the adapter sequences for adapter removal?**
+Yes. If you want to provide custom adapter sequences for adapter removal, you can provide a FASTA file containing the adapter sequences and specify its path in the config under `pipeline.raw_reads_processing.adapter_removal.settings.adapters_sequences.[r1|r2]`. 
+
+In case they are not provided, fastp will try to auto-detect adapters based on the read data.
+
+**Q: Can I provide already pre-processed reads?**
+Yes. If you have already pre-processed reads (e.g., adapter-trimmed and quality-filtered) and want to skip the raw reads processing step, you can place your pre-processed FASTQ files in the expected location under `<species>/raw/reads/` with the correct naming convention. 
+
+To skip the adapter removal and quality filtering steps, set the `execute` flag to `false` for those steps in the config:
+
+```yaml
+pipeline:
+  raw_reads_processing:
+    adapter_removal:
+      execute: false
+    quality_filtering:
+      execute: false
+``` 
+
+This way, pastForward will use your pre-processed reads directly for downstream steps without attempting to re-process them. 
+
 ---
 
 ## Configuration
@@ -212,6 +233,13 @@ Non theless, it is recommended to monitor disk usage during the first run to ens
 
 **Q: Can I run multiple instances of pastForward simultaneously?**
 Yes, you can run multiple instances of pastForward simultaneously, provided that each instance has its own independent working directory and configuration. This allows you to process different datasets or run the same dataset with different parameters in parallel.
+
+**Q: Can I stop a running pastForward instance without corrupting the results?**
+Yes. pastForward is designed to handle interruptions gracefully. If you need to stop a running instance, you can safely terminate the process (e.g., using `Ctrl+C` or `kill`). pastForward will leave behind a lock file to prevent concurrent runs from interfering with each other.
+
+In case you run pastForward in the background, you can stop it using `kill -SIGINT <PID>` where `<PID>` is the process ID of the running instance (you can get it with `head <pipeline.log>`).
+
+When you are ready to resume, simply run pastForward again with the same command. It will detect the existing lock file and prompt you to unlock it using `snakemake --unlock`. After unlocking, you can re-run pastForward, and it will pick up where it left off without corrupting any results.
 
 ---
 
