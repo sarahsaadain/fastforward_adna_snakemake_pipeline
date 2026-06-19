@@ -1151,8 +1151,8 @@
               </div>
               <div class="field" style="margin-top:8px">
                 <label>Min MAPQ for SCG reads</label>
-                <input type="number" id="dyn_min_mapq_scg" value="15" min="0" oninput="render()">
-                <span style="font-size:.68rem;color:var(--text-muted);margin-top:3px;display:block">Reads mapping to SCG (<code>_scg</code>) references with MAPQ below this value are removed after mapping. Feature library reads are not affected. (Default: 15)</span>
+                <input type="number" id="dyn_min_mapq_scg" value="0" min="0" oninput="render()">
+                <span style="font-size:.68rem;color:var(--text-muted);margin-top:3px;display:block">Reads mapping to SCG (<code>_scg</code>) references with MAPQ below this value are removed after mapping. Feature library reads are not affected. (Default: 0)</span>
               </div>
               <div class="field" style="margin-top:8px">
                 <label>Min MAPQ for feature reads</label>
@@ -1815,7 +1815,7 @@ function populateForm(c) {
   else setOpt('dyn_xp_en','dyn_xp_body','dyn_xp_hdr',false);
   sb('dyn_keep_mapped_bam', dym.keep_mapped_bam);
   sb('dyn_comp_mapping', dym.competitive_mapping);
-  sv('dyn_min_mapq_scg', dym.min_mapq_scg != null ? dym.min_mapq_scg : 15);
+  sv('dyn_min_mapq_scg', dym.min_mapq_scg != null ? dym.min_mapq_scg : 0);
   sv('dyn_min_mapq_fle', dym.min_mapq_fle != null ? dym.min_mapq_fle : 0);
   sb('sv_exec',  (dyn.seqvista||{}).execute);                     dot('sv_exec','d_sv');
   const svs = (dyn.seqvista||{}).settings||{};

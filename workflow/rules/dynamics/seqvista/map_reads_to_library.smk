@@ -8,7 +8,7 @@ _BWA_ALN_DEFAULTS    = "-n 0.01 -k 2 -l 1024 -o 2"  # Oliva et al. 2021 (10.1093
 _MINIMAP2_DEFAULTS   = "-ax sr"
 _dyn_mapper_extra    = _dyn_settings.get("mapper_extra_params", _BWA_ALN_DEFAULTS if _dyn_mapper == "bwa-aln" else (_MINIMAP2_DEFAULTS if _dyn_mapper == "minimap2" else ""))
 _dyn_keep_mapped_bam = _dyn_settings.get("keep_mapped_bam", False)
-_dyn_min_mapq_scg    = _dyn_settings.get("min_mapq_scg", 15)
+_dyn_min_mapq_scg    = _dyn_settings.get("min_mapq_scg", 0)
 _dyn_min_mapq_fle    = _dyn_settings.get("min_mapq_fle", 0)
 _comp_execute        = config.get("pipeline", {}).get("dynamics", {}).get("mapping", {}).get("settings", {}).get("competitive_mapping", False)
 

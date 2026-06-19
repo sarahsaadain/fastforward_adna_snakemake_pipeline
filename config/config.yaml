@@ -195,7 +195,7 @@ pipeline:
         # Minimum mapping quality score applied to SCG sequences (_scg) in the combined library.
         # Reads mapping to SCG references with MAPQ below this value are removed after mapping.
         # Set to 0 to disable.
-        min_mapq_scg: 15
+        min_mapq_scg: 0
         # Minimum mapping quality score applied to feature library sequences (_fle) in the combined library.
         # Reads mapping to feature references with MAPQ below this value are removed after mapping.
         # SCG reads (_scg) are not affected. Set to 0 (default) to disable.
