@@ -56,6 +56,28 @@ Stats are stored as per-individual JSON files in `{species}/processed/dynamics/s
 
 `determine_scg_ranking.py` aggregates statistics across all individuals and scores each SCG on three jointly penalised criteria. SCGs are then ranked in descending order; the top `num_top_scgs` are written to the filtered FASTA used by the Dynamics pipeline.
 
+### Per-individual coverage normalisation
+
+Individuals in a dataset are rarely sequenced to the same depth. Comparing raw depths across a 2× and a 30× sample would distort every metric: the high-coverage individual would dominate peak values, and mean depths would be meaningless averages of incompatible scales.
+
+Before scoring, each individual's sequencing depth is accounted for by computing a **per-individual baseline** — the median depth across all candidate SCGs for that individual:
+
+```
+baseline_i = median(scg_median_depth for all SCGs, individual i)
+```
+
+Each SCG's depth is then expressed as a **depth ratio** relative to that baseline:
+
+```
+depth_ratio_i = scg_median_depth_i / baseline_i
+```
+
+A depth ratio of 1.0 means the SCG is covered exactly as expected for that individual's overall sequencing depth. All depth-based metrics used in scoring are computed from these ratios, making them comparable across individuals regardless of absolute coverage level.
+
+The baseline uses the **median** deliberately. If a handful of multi-copy genes slip through BUSCO, their elevated depths cannot pull the baseline upward — the single-copy majority anchors it. As a result, true SCGs cluster at a ratio of ~1.0, while multi-copy genes sit above it (a 2-copy gene yields a ratio of ~2.0) and are penalised accordingly.
+
+---
+
 ### Breadth of coverage (`score_breadth`)
 
 Mean breadth across all individuals. A gene that is not reliably covered along its full length is not useful for normalisation, regardless of how deep the covered portion is.
@@ -64,11 +86,14 @@ Mean breadth across all individuals. A gene that is not reliably covered along i
 
 ### Depth variation (`score_depth_variation`)
 
-Penalises uneven depth within a gene using the ratio of `max_depth / mean_median_depth`:
+Penalises uneven depth within a gene. `max_variation` is computed in normalised space: each individual's peak depth is first divided by that individual's baseline, and the worst such value across individuals is divided by the mean depth ratio:
 
 ```
+max_variation         = max(max_depth_i / baseline_i) / mean_depth_ratio
 score_depth_variation = exp(−max_variation × 0.15)
 ```
+
+Previously `max_variation` used raw depths, so a single high-coverage individual could inflate the peak for every SCG. The normalised form isolates genuine within-gene pile-ups from between-individual coverage differences.
 
 A true SCG should have relatively uniform depth. Genes with extreme local pile-ups — caused by repetitive elements (e.g. microsatellite tracts in introns), alignment artefacts, or paralogs missed by BUSCO — are downranked harshly.
 
@@ -84,16 +109,16 @@ Example of a microsatellite in a BUSCO gene that would be downranked by this cri
 
 ### Depth consistency (`score_depth_consistency`)
 
-Penalises SCGs whose depth deviates from the global median across all SCGs. A MAD-based z-score is computed:
+Penalises SCGs whose normalised depth deviates from the expected value of **1.0**. After per-individual normalisation, true SCGs cluster at 1.0 by construction; multi-copy genes sit above it. The MAD of all SCGs' `mean_depth_ratio` values — computed relative to 1.0 — calibrates the scale of the penalty:
 
 ```
-depth_deviation        = |median_depth_scg − global_median_depth| / (global_MAD + ε)
+depth_deviation         = |mean_depth_ratio − 1.0| / (MAD_ratio + ε)
 score_depth_consistency = exp(−depth_deviation / 4)
 ```
 
-`global_median_depth` is the median of all per-SCG median depths; using the median rather than the mean makes this robust to the outliers being detected. `global_MAD` (Median Absolute Deviation) provides a scale-free spread measure: a `depth_deviation` of 1 means the SCG sits one MAD from the centre, a value of 5 marks a clear outlier.
+The reference is fixed at 1.0 rather than derived from the data, because the per-individual normalisation already guarantees that the true SCG majority clusters there. The MAD remains data-derived so the penalty scale adapts to the actual spread in the dataset. A `depth_deviation` of 1 means the SCG sits one MAD from 1.0; a value of 5 marks a clear outlier.
 
-SCGs that are consistently under- or over-represented relative to the bulk are likely not truly single-copy in practice. The more centrally they cluster, the more reliable they are as normalisers.
+SCGs that are consistently over-represented relative to the bulk are likely not truly single-copy in practice (copy number variants, paralogs, or BUSCO misclassifications). The closer a gene clusters to 1.0, the more reliable it is as a normaliser.
 
 ![Depth Consistency Scoring](img/curve_depth_consistency.png)
 
@@ -111,8 +136,8 @@ score = score_breadth + score_depth_variation + score_depth_consistency
 
 | Path | Description |
 |---|---|
-| `{species}/results/dynamics/scg/{species}_scg_ranked.tsv` | Full ranked table with all scoring components |
-| `{species}/results/dynamics/scg/{species}_scg_ranked.json` | Detailed JSON with per-individual raw stats and scoring breakdown |
+| `{species}/results/dynamics/scg/{species}_scg_ranked.tsv` | Full ranked table with all scoring components; `mean_depth_ratio` column is the per-individual-normalised depth (1.0 = expected SCG level) |
+| `{species}/results/dynamics/scg/{species}_scg_ranked.json` | Detailed JSON with per-individual raw stats, per-individual baselines, depth ratios, and scoring breakdown; `global_stats.individual_baselines` records each sample's normalisation baseline |
 | `{species}/processed/dynamics/scg/{species}_relevant_scg.fasta` | Top-ranked SCG sequences passed to the Dynamics mapping step |
 | `{species}/processed/dynamics/scg/{species}_relevant_scg.txt` | Plain list of retained SCG IDs |
 | `{species}/processed/dynamics/scg/{species}_relevant_scg.bed` | BED file of retained SCG regions |

@@ -38,7 +38,27 @@ for stats_file, scg_stats in zip(stats_files, scg_stats_per_bam):
         scg_aggregated[scg].append(stats)
 
 # ─────────────────────────────────────────────────────────────────────────────
+# STEP 2.5: Compute per-individual depth baselines
+# Each individual's baseline = median depth across all SCGs for that individual.
+# Using the median (not mean) keeps multi-copy gene outliers from inflating the
+# baseline, so normalization targets the single-copy majority.
+# ─────────────────────────────────────────────────────────────────────────────
+logger.info("Computing per-individual depth baselines...")
+
+individual_baselines = {}
+for stats_file, scg_stats in zip(stats_files, scg_stats_per_bam):
+    depths = [s["median_depth"] for s in scg_stats.values()]
+    baseline = float(np.median(depths)) if depths else 1.0
+    if baseline == 0:
+        baseline = 1.0
+    individual_baselines[stats_file] = baseline
+    logger.info(f"Individual baseline [{stats_file}]: {baseline:.4f}")
+
+# ─────────────────────────────────────────────────────────────────────────────
 # STEP 3: Compute summary metrics per SCG across all individuals
+# Depths are normalized by each individual's baseline before aggregation so
+# that coverage differences across individuals do not bias the comparison.
+# A depth_ratio of 1.0 means "covered at the expected SCG level."
 # ─────────────────────────────────────────────────────────────────────────────
 logger.info("Computing metrics across individuals...")
 scg_summary = {}
@@ -54,9 +74,16 @@ for scg, values in scg_aggregated.items():
     samples_breadths      = [v["breadth"] for v in values]
     source_files          = [v["source_file"] for v in values]
 
+    samples_baselines    = [individual_baselines[v["source_file"]] for v in values]
+    samples_depth_ratios = [v["median_depth"] / b for v, b in zip(values, samples_baselines)]
+    samples_norm_maxes   = [v["max_depth"]    / b for v, b in zip(values, samples_baselines)]
+
     mean_avg_depth    = np.mean(samples_avg_depths)
     mean_median_depth = np.mean(samples_median_depths)
-    max_variation     = max(samples_max_depths) / mean_median_depth if mean_median_depth > 0 else 99
+    mean_depth_ratio  = float(np.mean(samples_depth_ratios))
+    # max_variation is now the ratio of the worst per-individual peak to the
+    # mean normalized depth — computed entirely in normalized space.
+    max_variation     = max(samples_norm_maxes) / mean_depth_ratio if mean_depth_ratio > 0 else 99
     mean_breadth      = np.mean(samples_breadths)
 
     scg_summary[scg] = {
@@ -70,6 +97,8 @@ for scg, values in scg_aggregated.items():
                 "max_depth":     samples_max_depths[i],
                 "covered_bases": samples_covered_bases[i],
                 "breadth":       samples_breadths[i],
+                "baseline":      round(samples_baselines[i], 4),
+                "depth_ratio":   round(samples_depth_ratios[i], 4),
             }
             for i in range(len(values))
         },
@@ -78,10 +107,13 @@ for scg, values in scg_aggregated.items():
         "max_depth":        max(samples_max_depths),
         "mean_depth":       round(mean_avg_depth, 4),
         "median_depth":     round(mean_median_depth, 4),
+        "mean_depth_ratio": round(mean_depth_ratio, 4),
         "per_sample_min_depths":    samples_min_depths,
         "per_sample_avg_depths":    samples_avg_depths,
         "per_sample_max_depths":    samples_max_depths,
         "per_sample_median_depths": samples_median_depths,
+        "per_sample_depth_ratios":  [round(r, 4) for r in samples_depth_ratios],
+        "per_sample_baselines":     [round(b, 4) for b in samples_baselines],
         "per_sample_breadths":      samples_breadths,
         "per_sample_covered_bases": samples_covered_bases,
         "max_variation":  round(max_variation, 4),
@@ -90,20 +122,22 @@ for scg, values in scg_aggregated.items():
 
     logger.info(
         f"SCG metrics computed. Min depth: {scg_summary[scg]['min_depth']}; "
-        f"Mean depth: {scg_summary[scg]['mean_depth']}; "
+        f"Mean depth ratio: {mean_depth_ratio:.4f}; "
         f"Breadth: {scg_summary[scg]['mean_breadth']}"
     )
 
 # ─────────────────────────────────────────────────────────────────────────────
-# STEP 4: Compute reference depth statistics across all SCGs
+# STEP 4: Compute MAD of normalized depth ratios
+# The reference is 1.0 by construction (individual baselines derived from all
+# SCGs via median, so true SCGs cluster at 1.0; multi-copy genes sit above).
+# MAD is computed relative to 1.0 to calibrate the consistency penalty.
 # ─────────────────────────────────────────────────────────────────────────────
-logger.info("Normalizing metrics for scoring...")
+logger.info("Computing MAD of normalized depth ratios...")
 
-all_median_depths = [v["median_depth"] for v in scg_summary.values()]
-median_depth = np.median(all_median_depths)
-mad_depth    = np.median(np.abs(np.array(all_median_depths) - median_depth))
+all_depth_ratios = np.array([v["mean_depth_ratio"] for v in scg_summary.values()])
+mad_ratio = float(np.median(np.abs(all_depth_ratios - 1.0)))
 
-logger.info(f"Median depth: {median_depth:.2f} (MAD: {mad_depth:.2f})")
+logger.info(f"Depth ratio reference: 1.0 (MAD: {mad_ratio:.4f})")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # STEP 5: Score each SCG
@@ -117,7 +151,7 @@ for scg, vals in scg_summary.items():
 
     score_breadth = vals["mean_breadth"]
     score_depth_variation = np.exp(-vals["max_variation"] * depth_variance_decay)
-    depth_deviation = abs(vals["median_depth"] - median_depth) / (mad_depth + 1e-9)
+    depth_deviation = abs(vals["mean_depth_ratio"] - 1.0) / (mad_ratio + 1e-9)
     score_depth_consistency = np.exp(-depth_deviation / depth_consistency_decay)
     score = score_breadth + score_depth_variation + score_depth_consistency
 
@@ -130,15 +164,15 @@ for scg, vals in scg_summary.items():
 
     scg_scores[scg] = score
     scg_summary[scg]["scoring"] = {
-        "global_median_depth":    round(float(median_depth), 4),
-        "global_mad_depth":       round(float(mad_depth), 4),
-        "depth_variance_decay":   depth_variance_decay,
+        "normalization_reference": 1.0,
+        "global_mad_ratio":        round(float(mad_ratio), 4),
+        "depth_variance_decay":    depth_variance_decay,
         "depth_consistency_decay": depth_consistency_decay,
-        "depth_deviation":        round(float(depth_deviation), 4),
-        "score_breadth":          round(float(score_breadth), 4),
-        "score_depth_variation":  round(float(score_depth_variation), 4),
+        "depth_deviation":         round(float(depth_deviation), 4),
+        "score_breadth":           round(float(score_breadth), 4),
+        "score_depth_variation":   round(float(score_depth_variation), 4),
         "score_depth_consistency": round(float(score_depth_consistency), 4),
-        "score_scg":              round(float(score), 4),
+        "score_scg":               round(float(score), 4),
     }
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -148,12 +182,12 @@ top_scgs = sorted(scg_scores.items(), key=lambda x: x[1], reverse=True)
 
 logger.info("Writing TSV ranking...")
 with open(summary_file, "w") as f:
-    f.write("scg_name\tsamples\tmedian_depth\tdepth_variation\tmean_breadth\tscore_breadth\tscore_depth_variation\tscore_depth_consistency\tscore\n")
+    f.write("scg_name\tsamples\tmean_depth_ratio\tdepth_variation\tmean_breadth\tscore_breadth\tscore_depth_variation\tscore_depth_consistency\tscore\n")
     for scg, score in top_scgs:
         stats = scg_summary[scg]
         s = stats["scoring"]
         f.write(
-            f"{scg}\t{stats['samples']}\t{stats['median_depth']:.2f}\t"
+            f"{scg}\t{stats['samples']}\t{stats['mean_depth_ratio']:.4f}\t"
             f"{stats['max_variation']:.2f}\t{stats['mean_breadth']:.3f}\t"
             f"{s['score_breadth']:.3f}\t{s['score_depth_variation']:.3f}\t"
             f"{s['score_depth_consistency']:.3f}\t{s['score_scg']:.3f}\n"
@@ -162,11 +196,13 @@ with open(summary_file, "w") as f:
 logger.info("Writing JSON ranking...")
 json_output = {
     "global_stats": {
-        "median_depth": round(float(median_depth), 4),
-        "mad_depth":    round(float(mad_depth), 4),
-        "decay":        depth_variance_decay,
-        "n_scgs":       len(scg_summary),
-        "n_individuals": len(stats_files),
+        "normalization":           "per_individual_median",
+        "normalization_reference": 1.0,
+        "mad_ratio":               round(float(mad_ratio), 4),
+        "decay":                   depth_variance_decay,
+        "n_scgs":                  len(scg_summary),
+        "n_individuals":           len(stats_files),
+        "individual_baselines":    {f: round(b, 4) for f, b in individual_baselines.items()},
     },
     "scgs": {scg: scg_summary[scg] for scg, _ in top_scgs}
 }
