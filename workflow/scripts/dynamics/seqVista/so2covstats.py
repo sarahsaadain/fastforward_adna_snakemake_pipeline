@@ -16,6 +16,7 @@ Output columns
   Coverage
   seq_len      number of positions in the sequence
   median_cov   median coverage; copy-number proxy when SCG-normalised
+  mean_cov     mean coverage across all positions
   mad_cov      median absolute deviation of coverage (robust spread)
   cv_cov       MAD / median; scale-independent variation (NaN if median=0)
   max_cov      peak coverage
@@ -54,6 +55,7 @@ def compute_stats(filepath: Path, sample_id: str) -> pd.DataFrame:
     ----------------
     seq_len     : number of positions in the sequence
     median_cov  : median coverage across all positions; used as copy number proxy
+    mean_cov    : mean (arithmetic average) coverage across all positions
                   when data is SCG-normalised (1 = single copy, 2 = duplicated, etc.)
     mad_cov     : median absolute deviation of coverage; robust spread measure
     cv_cov      : MAD / median; scale-independent coverage variation
@@ -73,6 +75,7 @@ def compute_stats(filepath: Path, sample_id: str) -> pd.DataFrame:
         seq_len = len(vals)
 
         median_cov = float(np.median(vals))
+        mean_cov   = float(np.mean(vals))
         mad_cov    = float(np.median(np.abs(vals - median_cov)))
         cv_cov     = mad_cov / median_cov if median_cov > 0 else np.nan
         max_cov    = float(np.max(vals))
@@ -93,6 +96,7 @@ def compute_stats(filepath: Path, sample_id: str) -> pd.DataFrame:
             "sampleid":    sample_id,
             "seq_len":     seq_len,
             "median_cov":  round(median_cov,  3),
+            "mean_cov":    round(mean_cov,    3),
             "mad_cov":     round(mad_cov,     3),
             "cv_cov":      round(cv_cov,      3),
             "max_cov":     round(max_cov,     3),

@@ -43,7 +43,7 @@ log = logging.getLogger(__name__)
 # Per-sample columns to carry into the wide output
 # These are written as {metric}__{sampleid} in the final table
 PER_SAMPLE_COLS = [
-    "median_cov", "mad_cov", "cv_cov", "max_cov", "frac_low",
+    "median_cov", "mean_cov", "mad_cov", "cv_cov", "max_cov", "frac_low",
     "n_snps", "snp_density", "median_alt",
 ]
 

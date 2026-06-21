@@ -2,6 +2,7 @@ from io import StringIO, TextIOBase
 from collections import defaultdict
 import logging
 import re
+import numpy as np
 
 
 # everything 0-based
@@ -272,31 +273,16 @@ class NormFactor:
     def computeNormFactorForSe(cls, seqEntries: list, minDistance:int,quantile:int):
         assert quantile<50 and quantile>=0
         assert minDistance >=0
-        # compute normalizatino factor for seq-entries
-        totcoverages=[]
+        per_scg_medians=[]
         for se in seqEntries:
-            # ignore the ends of the entries
-            if len(se.cov) <= 2 *minDistance:
+            if not se.cov:
                 continue
-            # use only unambiguous coverage (total - ambiguous)
-            unambig_cov=[c-a for c,a in zip(se.cov,se.ambcov)]
-            if minDistance>0:
-                # exclude the ends of the scgs
-                tcov=unambig_cov[minDistance:-minDistance]
-                totcoverages.extend(tcov)
-            else:
-                totcoverages.extend(unambig_cov)
+            per_scg_medians.append(float(np.median(se.cov)))
 
-        # finaly exclude the quantiles of the largest and smallest coverages        
-        totcoverages.sort()
-        qfrac=float(quantile)/100.0
-        qlen=int(len(totcoverages)*qfrac)
-        if quantile>0:
-            totcoverages=totcoverages[qlen:-qlen]
-        if len(totcoverages)==0:
+        if len(per_scg_medians)==0:
             raise Exception("Unable to normalize; no valid coverage for a single copy gene")
-        mean=float(sum(totcoverages))/float(len(totcoverages))
-        return mean
+        # mean of per-SCG medians: each gene contributes equally regardless of length
+        return sum(per_scg_medians)/len(per_scg_medians)
 
 
 
@@ -746,11 +732,10 @@ def test_computeNormalization():
     nf=NormFactor.computeNormFactorForSe(ses,0,0)
     assert nf==6, "test1"
 
+    # median-of-medians: SCG1 median=10, SCG2 median=2, median-of-[10,2]=(10+2)/2=6
     ses=[SeqEntry("t",[1,10,10,10,10,10,1],[],[],[]),SeqEntry("t",[1,2,2,2,2,2,1],[],[],[])]
     nf=NormFactor.computeNormFactorForSe(ses,0,0)
-    assert nf<5, "test2"
-    nf=NormFactor.computeNormFactorForSe(ses,1,0)
-    assert nf==6, "test3"
+    assert nf==6, "test2"
 
     print("Quick test computation of normalization factor passed ✓")
 

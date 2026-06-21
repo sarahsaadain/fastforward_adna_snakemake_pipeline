@@ -82,6 +82,8 @@ def main():
         )
         sys.exit(1)
 
+    log.info(f"Normalization factor for {args.seqentry}: {normfactor:.4f}")
+
     for se in SeqEntryReader(str(args.seqentry)):
         sen = se.normalize(normfactor)
         writer.write(str(sen))
