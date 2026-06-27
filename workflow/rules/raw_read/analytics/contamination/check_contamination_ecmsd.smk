@@ -43,6 +43,7 @@ rule ecmsd_analyze_contamination:
         summary                         = "{species}/results/contamination_analysis/ecmsd/{individual}/{sample}/mapping/{sample}_Mito_summary.txt",
         paf                             = "{species}/results/contamination_analysis/ecmsd/{individual}/{sample}/mapping/{sample}_Mito.paf.gz",
         coverage                        = "{species}/results/contamination_analysis/ecmsd/{individual}/{sample}/mapping/{sample}_Mito_coverage.txt",
+        ranked_summary                  = "{species}/results/contamination_analysis/ecmsd/{individual}/{sample}/mapping/{sample}_Mito_summary.ref_summary.txt",
         tax_hierarchy_proportions       = _ecmsd_tax_hierarchy_proportions_txt_output,
         tax_hierarchy_summary           = _ecmsd_tax_hierarchy_summary_txt_output,
         tax_hierarchy_readlength        = _ecmsd_tax_hierarchy_readlength_output,
