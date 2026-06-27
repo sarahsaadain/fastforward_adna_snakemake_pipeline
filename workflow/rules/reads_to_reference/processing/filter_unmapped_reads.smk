@@ -20,7 +20,8 @@
 #   processing-step output and is not marked temp).
 #
 # action = "extract_fastq" / "extract_fasta"
-#   Extracts unmapped reads into a compressed FASTQ or FASTA file.
+#   Extracts unmapped reads directly from the pre-filter BAM into a
+#   compressed FASTQ or FASTA file (samtools/fastx wrapper, -f 4 flag).
 #   get_final_bam copies the unmodified pre-filter BAM to _final.bam.
 ####################################################
 
@@ -62,69 +63,42 @@ rule index_mapped_only_bam:
 
 # ---------------------------------------------------------------------------
 # action: "extract_fastq"
-# Extract unmapped reads (flag -f 4) into a compressed FASTQ file.
-# The intermediate subset BAM is temp; the FASTQ is the kept output.
+# Extract unmapped reads (-f 4) from the pre-filter BAM directly to
+# compressed FASTQ using samtools/fastx (outputtype="fastq").
 # ---------------------------------------------------------------------------
-rule extract_unmapped_reads_subset_for_fastq:
-    input:
-        bam = _pre_filter_bam
-    output:
-        temp("{species}/processed/{reference}/unmapped/{individual}_{reference}_unmapped_subset_fastq.bam")
-    params:
-        extra="-f 4"   # select only unmapped reads
-    threads: 4
-    log:
-        "{species}/processed/{reference}/unmapped/{individual}_{reference}_unmapped_subset_fastq.log"
-    message:
-        "Extracting unmapped read subset for FASTQ for {wildcards.individual} mapped to {wildcards.reference}."
-    wrapper:
-        "v9.3.0/bio/samtools/view"
-
 rule convert_unmapped_reads_to_fastq:
     input:
-        "{species}/processed/{reference}/unmapped/{individual}_{reference}_unmapped_subset_fastq.bam"
+        _pre_filter_bam
     output:
         "{species}/processed/{reference}/unmapped/{individual}_{reference}_unmapped.fastq.gz"
     params:
-        extra=""
+        outputtype="fastq",
+        extra="-f 4"
     threads: 4
     log:
         "{species}/processed/{reference}/unmapped/{individual}_{reference}_unmapped_fastq.log"
     message:
-        "Converting unmapped reads to FASTQ for {wildcards.individual} mapped to {wildcards.reference}."
+        "Extracting unmapped reads to FASTQ for {wildcards.individual} mapped to {wildcards.reference}."
     wrapper:
-        "v9.3.0/bio/samtools/fastq"
+        "v9.3.0/bio/samtools/fastx"
 
 # ---------------------------------------------------------------------------
 # action: "extract_fasta"
-# Extract unmapped reads (flag -f 4) into a compressed FASTA file.
+# Extract unmapped reads (-f 4) from the pre-filter BAM directly to
+# compressed FASTA using samtools/fastx (outputtype="fasta").
 # ---------------------------------------------------------------------------
-rule extract_unmapped_reads_subset_for_fasta:
-    input:
-        bam = _pre_filter_bam
-    output:
-        temp("{species}/processed/{reference}/unmapped/{individual}_{reference}_unmapped_subset_fasta.bam")
-    params:
-        extra="-f 4"   # select only unmapped reads
-    threads: 4
-    log:
-        "{species}/processed/{reference}/unmapped/{individual}_{reference}_unmapped_subset_fasta.log"
-    message:
-        "Extracting unmapped read subset for FASTA for {wildcards.individual} mapped to {wildcards.reference}."
-    wrapper:
-        "v9.3.0/bio/samtools/view"
-
 rule convert_unmapped_reads_to_fasta:
     input:
-        "{species}/processed/{reference}/unmapped/{individual}_{reference}_unmapped_subset_fasta.bam"
+        _pre_filter_bam
     output:
         "{species}/processed/{reference}/unmapped/{individual}_{reference}_unmapped.fasta.gz"
     params:
-        extra=""
+        outputtype="fasta",
+        extra="-f 4"
     threads: 4
     log:
         "{species}/processed/{reference}/unmapped/{individual}_{reference}_unmapped_fasta.log"
     message:
-        "Converting unmapped reads to FASTA for {wildcards.individual} mapped to {wildcards.reference}."
+        "Extracting unmapped reads to FASTA for {wildcards.individual} mapped to {wildcards.reference}."
     wrapper:
-        "v9.3.0/bio/samtools/fasta"
+        "v9.3.0/bio/samtools/fastx"
